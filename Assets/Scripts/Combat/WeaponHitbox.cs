@@ -12,8 +12,6 @@ public class WeaponHitbox : MonoBehaviour
     {
         hitTargets.Clear();
 
-        // Alle die gerade überlappen direkt als schon "gemerkt"
-        // damit OnTriggerEnter nicht sofort wieder feuert
         foreach (Health h in currentlyOverlapping)
         {
             hitTargets.Add(h);
@@ -32,7 +30,10 @@ public class WeaponHitbox : MonoBehaviour
         if (hitTargets.Contains(health)) return;
 
         hitTargets.Add(health);
-        health.TakeDamage(damage);
+
+        Vector3 hitDirection = (other.transform.position - transform.position).normalized;
+        health.TakeDamage(damage, hitDirection);
+
         Debug.Log($"Hit {other.name} for {damage} damage.");
     }
 

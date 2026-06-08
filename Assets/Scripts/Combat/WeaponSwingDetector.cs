@@ -5,12 +5,12 @@ public class WeaponSwingDetector : MonoBehaviour
     [SerializeField] private WeaponHitbox weaponHitbox;
     [SerializeField] private Transform trackedWeaponTransform;
 
-    [SerializeField] private float swingSpeedThreshold = 1.7f;
+    [SerializeField] private float swingSpeedThreshold = 1.6f;
     [SerializeField] private float resetSpeedThreshold = 0.3f;
     [SerializeField] private float minTimeBetweenSwings = 0.20f;
 
-    [SerializeField] private Vector3 localAttackDirection = Vector3.forward;
-    [SerializeField] private float directionDotThreshold = 0.7f;
+    [SerializeField] private Vector3 localAttackDirection = Vector3.right;
+    [SerializeField] private float directionDotThreshold = 0.15f;
 
     private Vector3 lastPosition;
     private bool swingActive;
