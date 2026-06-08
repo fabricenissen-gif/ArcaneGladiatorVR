@@ -4,8 +4,8 @@ using UnityEngine;
 public class HitWobble : MonoBehaviour
 {
     [SerializeField] private Transform targetTransform;
-    [SerializeField] private float wobbleDistance = 0.08f;
-    [SerializeField] private float wobbleDuration = 0.08f;
+    [SerializeField] private float wobbleDistance = 0.12f;
+    [SerializeField] private float wobbleDuration = 0.12f;
 
     private Vector3 originalLocalPosition;
     private Coroutine wobbleRoutine;
