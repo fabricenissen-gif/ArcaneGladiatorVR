@@ -22,7 +22,7 @@ public class WeaponHitbox : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        Health health = other.GetComponent<Health>();
+        Health health = other.GetComponentInParent<Health>();
         if (health == null) return;
 
         currentlyOverlapping.Add(health);
@@ -31,15 +31,15 @@ public class WeaponHitbox : MonoBehaviour
 
         hitTargets.Add(health);
 
-        Vector3 hitDirection = (other.transform.position - transform.position).normalized;
+        Vector3 hitDirection = (health.transform.position - transform.position).normalized;
         health.TakeDamage(damage, hitDirection);
 
-        Debug.Log($"Hit {other.name} for {damage} damage.");
+        Debug.Log($"Hit {health.name} for {damage} damage.");
     }
 
     private void OnTriggerExit(Collider other)
     {
-        Health health = other.GetComponent<Health>();
+        Health health = other.GetComponentInParent<Health>();
         if (health == null) return;
 
         currentlyOverlapping.Remove(health);
