@@ -5,6 +5,7 @@ public class WeaponSweepDamage : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Transform[] samplePoints;
+    [SerializeField] private WeaponHitFeedback hitFeedback;
 
     [Header("Hit Detection")]
     [SerializeField] private float sampleRadius = 0.14f;
@@ -46,7 +47,8 @@ public class WeaponSweepDamage : MonoBehaviour
         for (int i = 0; i < samplePoints.Length; i++)
         {
             Transform point = samplePoints[i];
-            if (point == null) continue;
+            if (point == null)
+                continue;
 
             Vector3 currentCenter = point.position;
             Vector3 previousCenter = lastPositionsCenter[i];
@@ -59,12 +61,14 @@ public class WeaponSweepDamage : MonoBehaviour
             Vector3 bladeWidthDirection = point.right;
 
             CheckTrack(previousCenter, currentCenter, hitDirection, sampleRadius);
+
             CheckTrack(
                 previousCenter - bladeWidthDirection * bladeHalfWidth,
                 currentCenter - bladeWidthDirection * bladeHalfWidth,
                 hitDirection,
                 sampleRadius
             );
+
             CheckTrack(
                 previousCenter + bladeWidthDirection * bladeHalfWidth,
                 currentCenter + bladeWidthDirection * bladeHalfWidth,
@@ -142,14 +146,24 @@ public class WeaponSweepDamage : MonoBehaviour
 
     private void TryDamageCollider(Collider hitCollider, Vector3 hitDirection)
     {
-        if (hitCollider == null) return;
+        if (hitCollider == null)
+            return;
 
         Health health = hitCollider.GetComponentInParent<Health>();
-        if (health == null) return;
-        if (hitThisWindow.Contains(health)) return;
+        if (health == null)
+            return;
+
+        if (hitThisWindow.Contains(health))
+            return;
 
         hitThisWindow.Add(health);
         health.TakeDamage(damage, hitDirection);
+
+        if (hitFeedback != null)
+        {
+            Vector3 feedbackPosition = hitCollider.ClosestPoint(transform.position);
+            hitFeedback.PlayHitFeedback(feedbackPosition, hitDirection);
+        }
 
         Debug.Log($"Hit {health.name} for {damage} damage.");
     }
