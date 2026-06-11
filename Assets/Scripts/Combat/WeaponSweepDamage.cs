@@ -13,6 +13,11 @@ public class WeaponSweepDamage : MonoBehaviour
     [SerializeField] private LayerMask enemyLayers;
     [SerializeField] private float minSwingSpeed = 0.7f;
 
+    [Header("Tip Tuning")]
+    [SerializeField] private int tipPointCount = 2;
+    [SerializeField] private float tipRadiusMultiplier = 1.35f;
+    [SerializeField] private float tipForwardOffset = 0.03f;
+
     [Header("Damage")]
     [SerializeField] private float damage = 20f;
 
@@ -64,6 +69,9 @@ public class WeaponSweepDamage : MonoBehaviour
             Transform point = samplePoints[i];
             if (point == null) continue;
 
+            bool isTipPoint = i >= samplePoints.Length - tipPointCount;
+            float currentRadius = isTipPoint ? sampleRadius * tipRadiusMultiplier : sampleRadius;
+
             Vector3 currentCenter = point.position;
             Vector3 previousCenter = lastPositionsCenter[i];
             Vector3 delta = currentCenter - previousCenter;
@@ -74,19 +82,28 @@ public class WeaponSweepDamage : MonoBehaviour
 
             Vector3 bladeWidthDirection = point.right;
 
-            CheckTrack(previousCenter, currentCenter, swingDirection);
+            CheckTrack(previousCenter, currentCenter, swingDirection, currentRadius);
             CheckTrack(previousCenter - bladeWidthDirection * bladeHalfWidth,
                        currentCenter - bladeWidthDirection * bladeHalfWidth,
-                       swingDirection);
+                       swingDirection, currentRadius);
             CheckTrack(previousCenter + bladeWidthDirection * bladeHalfWidth,
                        currentCenter + bladeWidthDirection * bladeHalfWidth,
-                       swingDirection);
+                       swingDirection, currentRadius);
+
+            if (isTipPoint)
+            {
+                Vector3 tipForward = point.forward * tipForwardOffset;
+
+                CheckTrack(previousCenter + tipForward,
+                           currentCenter + tipForward,
+                           swingDirection, currentRadius);
+            }
 
             lastPositionsCenter[i] = currentCenter;
         }
     }
 
-    private void CheckTrack(Vector3 start, Vector3 end, Vector3 hitDirection)
+    private void CheckTrack(Vector3 start, Vector3 end, Vector3 hitDirection, float radius)
     {
         Vector3 delta = end - start;
         float distance = delta.magnitude;
@@ -97,7 +114,7 @@ public class WeaponSweepDamage : MonoBehaviour
 
             RaycastHit[] sweepHits = Physics.SphereCastAll(
                 start,
-                sampleRadius,
+                radius,
                 direction,
                 distance,
                 enemyLayers,
@@ -109,19 +126,19 @@ public class WeaponSweepDamage : MonoBehaviour
                 TryDamageCollider(sweepHits[h].collider, hitDirection);
             }
 
-            CheckOverlapAtPosition(start + delta * 0.25f, hitDirection);
-            CheckOverlapAtPosition(start + delta * 0.5f, hitDirection);
-            CheckOverlapAtPosition(start + delta * 0.75f, hitDirection);
+            CheckOverlapAtPosition(start + delta * 0.25f, hitDirection, radius);
+            CheckOverlapAtPosition(start + delta * 0.5f, hitDirection, radius);
+            CheckOverlapAtPosition(start + delta * 0.75f, hitDirection, radius);
         }
 
-        CheckOverlapAtPosition(end, hitDirection);
+        CheckOverlapAtPosition(end, hitDirection, radius);
     }
 
-    private void CheckOverlapAtPosition(Vector3 position, Vector3 hitDirection)
+    private void CheckOverlapAtPosition(Vector3 position, Vector3 hitDirection, float radius)
     {
         Collider[] overlapHits = Physics.OverlapSphere(
             position,
-            sampleRadius,
+            radius,
             enemyLayers,
             QueryTriggerInteraction.Collide
         );
