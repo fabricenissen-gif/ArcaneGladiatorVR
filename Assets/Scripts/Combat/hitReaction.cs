@@ -15,7 +15,10 @@ public class HitReaction : MonoBehaviour
     private void Awake()
     {
         if (visualRoot == null)
+        {
+            Debug.LogWarning($"HitReaction on {gameObject.name} has no visualRoot assigned. Using own transform as fallback.");
             visualRoot = transform;
+        }
 
         originalScale = visualRoot.localScale;
         originalRotation = visualRoot.localRotation;
@@ -31,7 +34,6 @@ public class HitReaction : MonoBehaviour
 
     private IEnumerator ReactionRoutine(Vector3 hitDirection)
     {
-        // Schritt 1: kurz in Trefferrichtung kippen + kurz gestreckt
         Vector3 tiltAxis = Vector3.Cross(Vector3.up, hitDirection).normalized;
         Quaternion tiltRotation = Quaternion.AngleAxis(maxTiltAngle, tiltAxis);
 
@@ -47,16 +49,17 @@ public class HitReaction : MonoBehaviour
         float halfDuration = reactionDuration * 0.5f;
         float elapsed = 0f;
 
-        // Schritt 2: sanft zurück
         while (elapsed < halfDuration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / halfDuration;
+
             visualRoot.localRotation = Quaternion.Lerp(
                 originalRotation * tiltRotation,
                 originalRotation,
                 t
             );
+
             visualRoot.localScale = Vector3.Lerp(squishScale, originalScale, t);
             yield return null;
         }

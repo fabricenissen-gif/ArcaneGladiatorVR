@@ -2,8 +2,11 @@ using UnityEngine;
 
 public class WeaponSwingDetector : MonoBehaviour
 {
+    [Header("References")]
     [SerializeField] private Transform trackedWeaponTransform;
+    [SerializeField] private WeaponSweepDamage weaponSweepDamage;
 
+    [Header("Swing Detection")]
     [SerializeField] private float swingSpeedThreshold = 1.0f;
     [SerializeField] private float resetSpeedThreshold = 0.25f;
     [SerializeField] private float minTimeBetweenSwings = 0.30f;
@@ -48,6 +51,9 @@ public class WeaponSwingDetector : MonoBehaviour
             lastSwingTime = Time.time;
             swingId++;
 
+            if (weaponSweepDamage != null)
+                weaponSweepDamage.BeginAttackWindow();
+
             Debug.Log($"Swing started. ID: {swingId}, Speed: {speed:F2}");
         }
         else if (swingActive &&
@@ -55,6 +61,10 @@ public class WeaponSwingDetector : MonoBehaviour
                  speed <= resetSpeedThreshold)
         {
             swingActive = false;
+
+            if (weaponSweepDamage != null)
+                weaponSweepDamage.EndAttackWindow();
+
             Debug.Log("Swing reset.");
         }
 

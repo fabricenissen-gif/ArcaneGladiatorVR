@@ -13,6 +13,7 @@ public class Health : MonoBehaviour
     private HitReaction hitReaction;
     private EnemyHealthBar healthBar;
     private Collider[] allColliders;
+    private SimpleEnemyChase simpleEnemyChase;
     private bool isDead;
 
     private void Awake()
@@ -23,6 +24,7 @@ public class Health : MonoBehaviour
         hitReaction = GetComponent<HitReaction>();
         healthBar = GetComponentInChildren<EnemyHealthBar>();
         allColliders = GetComponentsInChildren<Collider>();
+        simpleEnemyChase = GetComponent<SimpleEnemyChase>();
 
         UpdateHealthBar();
     }
@@ -40,6 +42,9 @@ public class Health : MonoBehaviour
 
         if (hitReaction != null)
             hitReaction.PlayReaction(hitDirection);
+
+        if (simpleEnemyChase != null)
+            simpleEnemyChase.NotifyHit();
 
         UpdateHealthBar();
 
@@ -63,6 +68,11 @@ public class Health : MonoBehaviour
             return;
 
         isDead = true;
+
+        if (hitWobble != null)
+        {
+            hitWobble.ResetToRestPose();         
+        }
 
         foreach (Collider col in allColliders)
         {
