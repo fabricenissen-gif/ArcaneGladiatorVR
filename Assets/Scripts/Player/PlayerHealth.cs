@@ -8,10 +8,8 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private int maxHealth = 100;
     [SerializeField] private float damageCooldown = 0.25f;
 
-    [Header("Death Flow")]
-    [SerializeField] private float deathDelay = 2f;
-    [SerializeField] private MonoBehaviour movementScript;
-    [SerializeField] private CharacterController characterController;
+    [Header("Death")]
+    [SerializeField] private float deathDelay = 1.5f;
 
     [Header("Hurt Sound")]
     [SerializeField] private AudioSource hurtAudioSource;
@@ -31,6 +29,7 @@ public class PlayerHealth : MonoBehaviour
     {
         currentHealth = maxHealth;
         isDead = false;
+
         Debug.Log("[PlayerHealth] Start health: " + currentHealth);
     }
 
@@ -64,16 +63,34 @@ public class PlayerHealth : MonoBehaviour
 
     private void PlayHurtSound()
     {
-        if (isDead || hurtAudioSource == null || hurtSound == null)
+        if (hurtAudioSource == null)
+        {
+            Debug.LogWarning("[PlayerHealth] No hurtAudioSource assigned.");
             return;
+        }
+
+        if (hurtSound == null)
+        {
+            Debug.LogWarning("[PlayerHealth] No hurtSound assigned.");
+            return;
+        }
 
         hurtAudioSource.PlayOneShot(hurtSound, hurtVolume);
     }
 
     private void PlayDeathSound()
     {
-        if (deathAudioSource == null || deathSound == null)
+        if (deathAudioSource == null)
+        {
+            Debug.LogWarning("[PlayerHealth] No deathAudioSource assigned.");
             return;
+        }
+
+        if (deathSound == null)
+        {
+            Debug.LogWarning("[PlayerHealth] No deathSound assigned.");
+            return;
+        }
 
         deathAudioSource.PlayOneShot(deathSound, deathVolume);
     }
@@ -88,22 +105,17 @@ public class PlayerHealth : MonoBehaviour
         if (hurtAudioSource != null && hurtAudioSource.isPlaying)
             hurtAudioSource.Stop();
 
-        if (movementScript != null)
-            movementScript.enabled = false;
-
-        if (characterController != null)
-            characterController.enabled = false;
-
         PlayDeathSound();
 
         Debug.Log("[PlayerHealth] Player died.");
-
-        StartCoroutine(DeathRoutine());
+        StartCoroutine(ReloadSceneRoutine());
     }
 
-    private IEnumerator DeathRoutine()
+    private IEnumerator ReloadSceneRoutine()
     {
         yield return new WaitForSeconds(deathDelay);
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+
+        Scene currentScene = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(currentScene.buildIndex);
     }
 }
