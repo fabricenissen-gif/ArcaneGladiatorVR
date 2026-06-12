@@ -21,6 +21,8 @@ public class SimpleEnemyChase : MonoBehaviour
     [SerializeField] private float attackWindup = 0.18f;
     [SerializeField] private int attackDamage = 10;
     [SerializeField] private LayerMask playerLayer;
+    [SerializeField] private float fallbackAttackForwardOffset = 1.0f;
+    [SerializeField] private float fallbackAttackUpOffset = 1.0f;
 
     [Header("Hit Pause")]
     [SerializeField] private float hitPauseDuration = 0.15f;
@@ -179,14 +181,10 @@ public class SimpleEnemyChase : MonoBehaviour
             return;
         }
 
-        if (attackPoint == null)
-        {
-            Log("ApplyAttackHit aborted: attackPoint is missing.");
-            return;
-        }
+        Vector3 attackCenter = GetAttackCenter();
 
         Collider[] hits = Physics.OverlapSphere(
-            attackPoint.position,
+            attackCenter,
             attackRadius,
             playerLayer,
             QueryTriggerInteraction.Collide
@@ -217,6 +215,21 @@ public class SimpleEnemyChase : MonoBehaviour
         {
             Log("Attack hit check finished, but no valid player target was damaged.");
         }
+    }
+
+    private Vector3 GetAttackCenter()
+    {
+        if (attackPoint != null)
+            return attackPoint.position;
+
+        Vector3 fallbackCenter =
+            transform.position +
+            transform.forward * fallbackAttackForwardOffset +
+            Vector3.up * fallbackAttackUpOffset;
+
+        Log("AttackPoint missing. Using fallback attack center.");
+
+        return fallbackCenter;
     }
 
     public void NotifyHit()
@@ -283,10 +296,17 @@ public class SimpleEnemyChase : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
 
+        Vector3 attackCenter;
+
         if (attackPoint != null)
-        {
-            Gizmos.color = Color.magenta;
-            Gizmos.DrawWireSphere(attackPoint.position, attackRadius);
-        }
+            attackCenter = attackPoint.position;
+        else
+            attackCenter =
+                transform.position +
+                transform.forward * fallbackAttackForwardOffset +
+                Vector3.up * fallbackAttackUpOffset;
+
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(attackCenter, attackRadius);
     }
 }
