@@ -1,6 +1,8 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using UnityEngine.XR.Interaction.Toolkit.Inputs.Haptics; // Wichtig für den HapticImpulsePlayer
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -10,6 +12,20 @@ public class PlayerHealth : MonoBehaviour
 
     [Header("Death")]
     [SerializeField] private float deathDelay = 1.5f;
+
+    [Header("Feedback Visuell")]
+    [Tooltip("Ziehe hier das rote Image auf dem World Space Canvas rein")]
+    [SerializeField] private Image damageOverlay;
+    [SerializeField] private float flashDuration = 0.4f;
+    [SerializeField, Range(0f, 1f)] private float maxAlpha = 0.6f;
+
+    [Header("Feedback Haptisch")]
+    [Tooltip("Ziehe hier den Left Controller rein (er zieht sich automatisch den HapticImpulsePlayer)")]
+    [SerializeField] private HapticImpulsePlayer leftHapticPlayer;
+    [Tooltip("Ziehe hier den Right Controller rein (er zieht sich automatisch den HapticImpulsePlayer)")]
+    [SerializeField] private HapticImpulsePlayer rightHapticPlayer;
+    [SerializeField, Range(0f, 1f)] private float hapticAmplitude = 0.5f;
+    [SerializeField] private float hapticDuration = 0.2f;
 
     [Header("Hurt Sound")]
     [SerializeField] private AudioSource hurtAudioSource;
@@ -24,11 +40,19 @@ public class PlayerHealth : MonoBehaviour
     private int currentHealth;
     private float nextDamageTime;
     private bool isDead;
+    private Coroutine flashCoroutine;
 
     private void Start()
     {
         currentHealth = maxHealth;
         isDead = false;
+
+        if (damageOverlay != null)
+        {
+            Color c = damageOverlay.color;
+            c.a = 0f;
+            damageOverlay.color = c;
+        }
 
         Debug.Log("[PlayerHealth] Start health: " + currentHealth);
     }
@@ -51,6 +75,7 @@ public class PlayerHealth : MonoBehaviour
         currentHealth -= damage;
 
         PlayHurtSound();
+        TriggerDamageFeedback();
 
         Debug.Log("[PlayerHealth] Current health: " + currentHealth);
 
@@ -61,60 +86,77 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
+    private void TriggerDamageFeedback()
+    {
+        // 1. Visueller Flash
+        if (damageOverlay != null)
+        {
+            if (flashCoroutine != null)
+                StopCoroutine(flashCoroutine);
+
+            flashCoroutine = StartCoroutine(FlashRoutine());
+        }
+
+        // 2. Haptisches Feedback über die neuen HapticImpulsePlayer
+        if (leftHapticPlayer != null)
+        {
+            leftHapticPlayer.SendHapticImpulse(hapticAmplitude, hapticDuration);
+        }
+        
+        if (rightHapticPlayer != null)
+        {
+            rightHapticPlayer.SendHapticImpulse(hapticAmplitude, hapticDuration);
+        }
+    }
+
+    private IEnumerator FlashRoutine()
+    {
+        Color color = damageOverlay.color;
+        color.a = maxAlpha;
+        damageOverlay.color = color;
+
+        float elapsedTime = 0f;
+        while (elapsedTime < flashDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            color.a = Mathf.Lerp(maxAlpha, 0f, elapsedTime / flashDuration);
+            damageOverlay.color = color;
+            yield return null;
+        }
+
+        color.a = 0f;
+        damageOverlay.color = color;
+    }
+
     private void PlayHurtSound()
     {
-        if (hurtAudioSource == null)
-        {
-            Debug.LogWarning("[PlayerHealth] No hurtAudioSource assigned.");
-            return;
-        }
-
-        if (hurtSound == null)
-        {
-            Debug.LogWarning("[PlayerHealth] No hurtSound assigned.");
-            return;
-        }
-
+        if (hurtAudioSource == null || hurtSound == null) return;
         hurtAudioSource.PlayOneShot(hurtSound, hurtVolume);
     }
 
     private void PlayDeathSound()
     {
-        if (deathAudioSource == null)
-        {
-            Debug.LogWarning("[PlayerHealth] No deathAudioSource assigned.");
-            return;
-        }
-
-        if (deathSound == null)
-        {
-            Debug.LogWarning("[PlayerHealth] No deathSound assigned.");
-            return;
-        }
-
+        if (deathAudioSource == null || deathSound == null) return;
         deathAudioSource.PlayOneShot(deathSound, deathVolume);
     }
 
     private void Die()
     {
-        if (isDead)
-            return;
-
+        if (isDead) return;
         isDead = true;
 
         if (hurtAudioSource != null && hurtAudioSource.isPlaying)
             hurtAudioSource.Stop();
 
         PlayDeathSound();
-
         Debug.Log("[PlayerHealth] Player died.");
+        
         StartCoroutine(ReloadSceneRoutine());
     }
 
     private IEnumerator ReloadSceneRoutine()
     {
         yield return new WaitForSeconds(deathDelay);
-
         Scene currentScene = SceneManager.GetActiveScene();
         SceneManager.LoadScene(currentScene.buildIndex);
     }
