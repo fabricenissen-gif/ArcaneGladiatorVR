@@ -1,6 +1,6 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit; // <--- Das fehlte! Hier sind die EventArgs drin.
+using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
@@ -18,7 +18,9 @@ public class WeaponAutoReturn : MonoBehaviour
     private void Awake()
     {
         grabInteractable = GetComponent<XRGrabInteractable>();
-        ReturnRoutine();
+        // Den ersten Aufruf in Awake kannst du weglassen oder drinlassen. 
+        // Besser ist es, ihn wegzulassen, damit das Schwert beim Start nicht direkt teleportiert wird, 
+        // falls du es anders spawnen willst. Ich habe ihn hier mal entfernt für einen saubereren Start.
     }
 
     private void OnEnable()
@@ -63,14 +65,21 @@ public class WeaponAutoReturn : MonoBehaviour
         // Prüfen, ob der Socket Platz hat
         if (backSocket != null && !backSocket.hasSelection)
         {
+            // ---> NEU: Das Wurf-Skript resetten, damit die Physik wieder normal funktioniert <---
+            var throwAssist = GetComponent<WeaponThrowAssist>();
+            if (throwAssist != null) 
+            {
+                throwAssist.ForceUnstick();
+            }
+
             // Position/Rotation in die Nähe des Sockets setzen (er fängt es dann ein)
             transform.position = backSocket.transform.position;
             transform.rotation = backSocket.transform.rotation;
-            
+
             // InteractionManager anweisen, das Objekt in den Socket zu stecken
             var interactionManager = grabInteractable.interactionManager;
             interactionManager.SelectEnter(backSocket, (IXRSelectInteractable)grabInteractable);
-            
+
             Debug.Log("Schwert ist zum Rücken zurückgekehrt.");
         }
     }

@@ -6,19 +6,40 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 [RequireComponent(typeof(XRGrabInteractable))]
 public class WeaponThrowAssist : MonoBehaviour
 {
-    [Header("Flight Assist")]
-    [Tooltip("Soll sich das Schwert in Flugrichtung ausrichten?")]
-    [SerializeField] private bool alignToFlightDirection = true;
-    [Tooltip("Wie stark soll die Ausrichtung sein? (höher = dartpfeil-artiger)")]
-    [SerializeField] private float flightAlignmentSpeed = 10f;
-    [Tooltip("Die lokale Achse, die nach vorne zeigen soll (Z = Klinge bei normalem Setup)")]
-    [SerializeField] private Vector3 bladeForwardAxis = Vector3.forward;
+    public enum ThrowStyle
+    {
+        Dart,
+        Chaotic
+    }
+
+    [Header("Throw Style Settings")]
+    public ThrowStyle currentThrowStyle = ThrowStyle.Dart;
+
+    [Header("General Flight Settings")]
+    [Tooltip("Ein leeres Child-Objekt, dessen Z-Achse in Richtung der Schwertspitze zeigt")]
+    [SerializeField] private Transform flightDirectionRef;
+
+    [Header("Dart Style Settings")]
+    [Tooltip("Wie schnell dreht sich das Schwert linear in Flugrichtung?")]
+    [SerializeField] private float dartAlignmentSpeed = 20f;
+    [Tooltip("Wie stark zieht die Schwerkraft beim Fliegen? (1 = normal, 0.5 = halbe Schwerkraft, gleitet weiter)")]
+    [Range(0f, 2f)]
+    [SerializeField] private float dartGravityScale = 0.6f;
+    [Tooltip("Verschiebt den Schwerpunkt von der Spitze (1) in Richtung Griff (0)")]
+    [Range(0f, 1f)]
+    [SerializeField] private float dartCenterOfMassOffset = 0.4f;
+
+    [Header("Chaotic Style Settings")]
+    [Tooltip("Kraft, die das Schwert in Richtung drückt (führt zu Überkorrektur/Wobbeln)")]
+    [SerializeField] private float chaoticAlignmentForce = 50f;
 
     [Header("Sticking (Steckenbleiben)")]
-    [Tooltip("Welche Layer dürfen durchstochen werden? (Gegner, Boden, Wände)")]
+    [Tooltip("Welche Layer dürfen durchstochen werden?")]
     [SerializeField] private LayerMask stickableLayers;
     [Tooltip("Mindestgeschwindigkeit, damit das Schwert stecken bleibt")]
     [SerializeField] private float minVelocityToStick = 3f;
+    [Tooltip("Wie tief (in Metern) soll das Schwert beim Einschlag ins Material rutschen?")]
+    [SerializeField] private float penetrationDepth = 0.15f;
     
     private Rigidbody rb;
     private XRGrabInteractable grabInteractable;
@@ -45,56 +66,87 @@ public class WeaponThrowAssist : MonoBehaviour
 
     private void OnReleased(SelectExitEventArgs args)
     {
-        // Prüfen, ob wir es WIRKLICH geworfen haben (nicht in einen Socket gelegt)
         if (!(args.interactorObject is UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor))
         {
-            if (rb.linearVelocity.magnitude > 0.5f) // Nur wenn wir es mit Schwung loslassen
+            if (rb.linearVelocity.magnitude > 0.5f)
             {
                 isThrown = true;
                 isStuck = false;
+                
+                if (currentThrowStyle == ThrowStyle.Dart)
+                {
+                    if (flightDirectionRef != null)
+                    {
+                        Vector3 originalCOM = rb.centerOfMass;
+                        Vector3 spikeCOM = transform.InverseTransformPoint(flightDirectionRef.position);
+                        rb.centerOfMass = Vector3.Lerp(originalCOM, spikeCOM, dartCenterOfMassOffset);
+                    }
+
+                    rb.angularVelocity *= 0.1f; 
+                    rb.useGravity = false;
+                }
+                else if (currentThrowStyle == ThrowStyle.Chaotic)
+                {
+                    if(flightDirectionRef != null) rb.centerOfMass = transform.InverseTransformPoint(flightDirectionRef.position);
+                    rb.useGravity = true;
+                }
             }
         }
     }
 
     private void OnGrabbed(SelectEnterEventArgs args)
     {
-        // Wenn wir es wieder greifen (oder es in den Rücken-Socket ploppt), Reset
         isThrown = false;
+        rb.ResetCenterOfMass();
+        rb.useGravity = true;
         
         if (isStuck)
         {
-            Unstick();
+            ForceUnstick();
         }
     }
 
     private void FixedUpdate()
     {
-        // Flug-Ausrichtung anwenden
-        if (isThrown && !isStuck && alignToFlightDirection && rb.linearVelocity.sqrMagnitude > 1f)
+        if (isThrown && !isStuck && flightDirectionRef != null && rb.linearVelocity.sqrMagnitude > 1f)
         {
             Vector3 flightDir = rb.linearVelocity.normalized;
-            // Wir drehen die konfigurierte bladeForwardAxis in Richtung der Flugrichtung
-            Quaternion targetRotation = Quaternion.FromToRotation(bladeForwardAxis, flightDir);
-            
-            // Da das Schwert vielleicht eine eigene Grundrotation hat, müssen wir das weich mischen
-            rb.MoveRotation(Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * flightAlignmentSpeed));
+            Vector3 currentSpikeDir = flightDirectionRef.forward;
+
+            if (currentThrowStyle == ThrowStyle.Dart)
+            {
+                rb.AddForce(Physics.gravity * dartGravityScale, ForceMode.Acceleration);
+
+                Quaternion targetRotForRef = Quaternion.LookRotation(flightDir, flightDirectionRef.up);
+                Quaternion targetRotationOfParent = targetRotForRef * Quaternion.Inverse(flightDirectionRef.localRotation);
+                
+                rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotationOfParent, dartAlignmentSpeed * Time.fixedDeltaTime));
+                rb.angularVelocity = Vector3.Lerp(rb.angularVelocity, Vector3.zero, Time.fixedDeltaTime * 15f);
+            }
+            else if (currentThrowStyle == ThrowStyle.Chaotic)
+            {
+                Vector3 rotationAxis = Vector3.Cross(currentSpikeDir, flightDir);
+                float angle = Vector3.Angle(currentSpikeDir, flightDir);
+
+                rb.AddTorque(rotationAxis.normalized * (angle * chaoticAlignmentForce * Time.fixedDeltaTime));
+                rb.angularVelocity = Vector3.Lerp(rb.angularVelocity, Vector3.zero, Time.fixedDeltaTime * 2f);
+            }
         }
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        // Wenn wir fliegen, nicht bereits stecken und stark genug geworfen wurden
         if (isThrown && !isStuck && rb.linearVelocity.magnitude >= minVelocityToStick)
         {
-            // Prüfen ob das getroffene Objekt auf dem richtigen Layer ist
             if ((stickableLayers.value & (1 << collision.gameObject.layer)) > 0)
             {
                 StickToSurface(collision);
             }
             else
             {
-                // Wenn wir eine Wand treffen, die nicht stickable ist, prallen wir ab -> Flug beenden
                 isThrown = false; 
+                rb.ResetCenterOfMass();
+                rb.useGravity = true;
             }
         }
     }
@@ -103,28 +155,28 @@ public class WeaponThrowAssist : MonoBehaviour
     {
         isStuck = true;
         isThrown = false;
+        
+        rb.ResetCenterOfMass();
+        rb.useGravity = true;
 
-        // Schwert einfrieren
+        // BERECHNUNG ANGEPASST: Wir nutzen die Klingen-Ausrichtung statt der verfälschten Velocity
+        Vector3 penetrationDirection = flightDirectionRef != null ? flightDirectionRef.forward : transform.forward;
+        transform.position += penetrationDirection * penetrationDepth;
+
         rb.isKinematic = true;
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-
-        // Optional: An das getroffene Objekt "heften" (wenn es ein Gegner ist, der sich bewegt)
-        // transform.SetParent(collision.transform, true);
-        
-        // ACHTUNG: Hier könntest du auch deinen WeaponSweepDamage aufrufen, 
-        // um beim "Einschlag" noch einmal ordentlich Schaden zu verursachen!
-        
-        Debug.Log("Schwert ist stecken geblieben in: " + collision.gameObject.name);
     }
 
-    private void Unstick()
+    public void ForceUnstick()
     {
         isStuck = false;
-        rb.isKinematic = false;
-        
-        // Falls wir es vorher als Parent an einen Gegner gehängt haben, 
-        // müssen wir das Parent hier wieder null setzen:
-        // transform.SetParent(null, true);
+        isThrown = false;
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.ResetCenterOfMass();
+            rb.useGravity = true;
+        }
     }
 }
