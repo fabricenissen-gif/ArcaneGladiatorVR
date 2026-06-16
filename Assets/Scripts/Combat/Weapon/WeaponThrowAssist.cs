@@ -18,27 +18,23 @@ public class WeaponThrowAssist : MonoBehaviour
     [Header("General Flight Settings")]
     [Tooltip("Ein leeres Child-Objekt, dessen Z-Achse in Richtung der Schwertspitze zeigt")]
     [SerializeField] private Transform flightDirectionRef;
+    
+    [Tooltip("Gibt dem Schwert beim Loslassen einen Extra-Schubs (1 = normal, 1.5 = 50% schneller)")]
+    [SerializeField] private float throwSpeedMultiplier = 1.3f;
 
     [Header("Dart Style Settings")]
-    [Tooltip("Wie schnell dreht sich das Schwert linear in Flugrichtung?")]
     [SerializeField] private float dartAlignmentSpeed = 20f;
-    [Tooltip("Wie stark zieht die Schwerkraft beim Fliegen? (1 = normal, 0.5 = halbe Schwerkraft, gleitet weiter)")]
     [Range(0f, 2f)]
     [SerializeField] private float dartGravityScale = 0.6f;
-    [Tooltip("Verschiebt den Schwerpunkt von der Spitze (1) in Richtung Griff (0)")]
     [Range(0f, 1f)]
     [SerializeField] private float dartCenterOfMassOffset = 0.4f;
 
     [Header("Chaotic Style Settings")]
-    [Tooltip("Kraft, die das Schwert in Richtung drückt (führt zu Überkorrektur/Wobbeln)")]
     [SerializeField] private float chaoticAlignmentForce = 50f;
 
     [Header("Sticking (Steckenbleiben)")]
-    [Tooltip("Welche Layer dürfen durchstochen werden?")]
     [SerializeField] private LayerMask stickableLayers;
-    [Tooltip("Mindestgeschwindigkeit, damit das Schwert stecken bleibt")]
     [SerializeField] private float minVelocityToStick = 3f;
-    [Tooltip("Wie tief (in Metern) soll das Schwert beim Einschlag ins Material rutschen?")]
     [SerializeField] private float penetrationDepth = 0.15f;
     
     private Rigidbody rb;
@@ -72,6 +68,10 @@ public class WeaponThrowAssist : MonoBehaviour
             {
                 isThrown = true;
                 isStuck = false;
+
+                // --- TWEAK 1: SPEED BOOST ---
+                // Gibt dem Wurf den nötigen "Wumms", um befriedigend zu sein
+                rb.linearVelocity *= throwSpeedMultiplier;
                 
                 if (currentThrowStyle == ThrowStyle.Dart)
                 {
@@ -159,13 +159,16 @@ public class WeaponThrowAssist : MonoBehaviour
         rb.ResetCenterOfMass();
         rb.useGravity = true;
 
-        // BERECHNUNG ANGEPASST: Wir nutzen die Klingen-Ausrichtung statt der verfälschten Velocity
         Vector3 penetrationDirection = flightDirectionRef != null ? flightDirectionRef.forward : transform.forward;
         transform.position += penetrationDirection * penetrationDepth;
 
         rb.isKinematic = true;
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
+
+        // --- TWEAK 2: PARENTING ---
+        // Das Schwert wird dem getroffenen Objekt untergeordnet und bewegt sich mit ihm mit
+        transform.SetParent(collision.transform, true);
     }
 
     public void ForceUnstick()
@@ -178,5 +181,10 @@ public class WeaponThrowAssist : MonoBehaviour
             rb.ResetCenterOfMass();
             rb.useGravity = true;
         }
+
+        // --- WICHTIG FÜR TWEAK 2 ---
+        // Wenn das Schwert gegriffen oder vom Auto-Return zurückgeholt wird, 
+        // müssen wir es wieder vom Gegner entkoppeln!
+        transform.SetParent(null, true);
     }
 }
