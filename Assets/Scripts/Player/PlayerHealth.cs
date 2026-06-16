@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using UnityEngine.XR.Interaction.Toolkit.Inputs.Haptics; // Wichtig für den HapticImpulsePlayer
+using UnityEngine.XR.Interaction.Toolkit.Inputs.Haptics;
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -42,6 +42,10 @@ public class PlayerHealth : MonoBehaviour
     private bool isDead;
     private Coroutine flashCoroutine;
 
+    // Öffentliche Getter für das Heal-System
+    public int CurrentHealth => currentHealth;
+    public int MaxHealth => maxHealth;
+
     private void Start()
     {
         currentHealth = maxHealth;
@@ -59,17 +63,9 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(int damage, Vector3 hitDirection)
     {
-        if (isDead)
-        {
-            Debug.Log("[PlayerHealth] Damage ignored because player is already dead.");
-            return;
-        }
+        if (isDead) return;
 
-        if (Time.time < nextDamageTime)
-        {
-            Debug.Log("[PlayerHealth] Damage ignored because of cooldown.");
-            return;
-        }
+        if (Time.time < nextDamageTime) return;
 
         nextDamageTime = Time.time + damageCooldown;
         currentHealth -= damage;
@@ -86,27 +82,32 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
+    // NEUE HEAL-METHODE FÜR DEN BURGER
+    public void Heal(int healAmount)
+    {
+        if (isDead) return;
+
+        currentHealth += healAmount;
+        if (currentHealth > maxHealth)
+        {
+            currentHealth = maxHealth;
+        }
+
+        Debug.Log($"[PlayerHealth] Healed for {healAmount}. Current health: {currentHealth}");
+        
+        // Optional: Hier könntest du noch einen grünen Flash oder Sound einbauen!
+    }
+
     private void TriggerDamageFeedback()
     {
-        // 1. Visueller Flash
         if (damageOverlay != null)
         {
-            if (flashCoroutine != null)
-                StopCoroutine(flashCoroutine);
-
+            if (flashCoroutine != null) StopCoroutine(flashCoroutine);
             flashCoroutine = StartCoroutine(FlashRoutine());
         }
 
-        // 2. Haptisches Feedback über die neuen HapticImpulsePlayer
-        if (leftHapticPlayer != null)
-        {
-            leftHapticPlayer.SendHapticImpulse(hapticAmplitude, hapticDuration);
-        }
-        
-        if (rightHapticPlayer != null)
-        {
-            rightHapticPlayer.SendHapticImpulse(hapticAmplitude, hapticDuration);
-        }
+        if (leftHapticPlayer != null) leftHapticPlayer.SendHapticImpulse(hapticAmplitude, hapticDuration);
+        if (rightHapticPlayer != null) rightHapticPlayer.SendHapticImpulse(hapticAmplitude, hapticDuration);
     }
 
     private IEnumerator FlashRoutine()
@@ -150,7 +151,7 @@ public class PlayerHealth : MonoBehaviour
 
         PlayDeathSound();
         Debug.Log("[PlayerHealth] Player died.");
-        
+
         StartCoroutine(ReloadSceneRoutine());
     }
 
