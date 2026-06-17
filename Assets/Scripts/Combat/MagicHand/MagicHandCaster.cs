@@ -1,82 +1,88 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class MagicHandCaster : MonoBehaviour
 {
-    [Header("Input")]
-    [SerializeField] private InputActionReference castAction;
-
-    [Header("Casting")]
+    [Header("References")]
+    [SerializeField] private MagicChargeSystem chargeSystem;
     [SerializeField] private Transform castPoint;
-    [SerializeField] private ArcaneBoltProjectile projectilePrefab;
-    [SerializeField] private float castCooldown = 0.25f;
 
-    [Header("Projectile Stats")]
-    [SerializeField] private float projectileDamage = 12f;
-    [SerializeField] private float projectileSpeed = 18f;
-    [SerializeField] private float projectileLifetime = 4f;
+    [Header("Aktiver Spell")]
+    [SerializeField] private SpellData activeSpell;
 
     [Header("Feedback")]
     [SerializeField] private ParticleSystem castMuzzleVfx;
     [SerializeField] private AudioSource castAudioSource;
     [SerializeField] private AudioClip castClip;
+    [SerializeField] private AudioClip chargedCastClip;
 
-    private float lastCastTime = -999f;
+    private void Awake()
+    {
+        if (chargeSystem == null)
+            chargeSystem = GetComponent<MagicChargeSystem>();
+
+        if (activeSpell != null)
+            chargeSystem.ChargeTime = activeSpell.chargeTime;
+    }
 
     private void OnEnable()
     {
-        if (castAction != null && castAction.action != null)
-        {
-            castAction.action.Enable();
-            castAction.action.performed += OnCastPerformed;
-        }
+        if (chargeSystem != null)
+            chargeSystem.OnChargeReleased += OnChargeReleased;
     }
 
     private void OnDisable()
     {
-        if (castAction != null && castAction.action != null)
-        {
-            castAction.action.performed -= OnCastPerformed;
-            castAction.action.Disable();
-        }
+        if (chargeSystem != null)
+            chargeSystem.OnChargeReleased -= OnChargeReleased;
     }
 
-    private void OnCastPerformed(InputAction.CallbackContext context)
+    public void SetSpell(SpellData newSpell)
     {
-        TryCast();
+        activeSpell = newSpell;
+        if (chargeSystem != null && newSpell != null)
+            chargeSystem.ChargeTime = newSpell.chargeTime;
     }
 
-    public void TryCast()
+    private void OnChargeReleased(float chargeProgress)
     {
-        if (projectilePrefab == null)
+        if (activeSpell == null)
         {
-            Debug.LogWarning("MagicHandCaster: No projectile prefab assigned.");
+            Debug.LogWarning("MagicHandCaster: Kein Spell zugewiesen.");
             return;
         }
 
-        if (castPoint == null)
-        {
-            Debug.LogWarning("MagicHandCaster: No cast point assigned.");
-            return;
-        }
+        Fire(chargeProgress);
+    }
 
-        if (Time.time < lastCastTime + castCooldown)
-            return;
+    private void Fire(float chargeProgress)
+    {
+        if (activeSpell.projectilePrefab == null || castPoint == null) return;
 
-        lastCastTime = Time.time;
+        float damage = Mathf.Lerp(activeSpell.baseDamage, activeSpell.fullChargedDamage, chargeProgress);
+        float speed  = Mathf.Lerp(activeSpell.baseSpeed,  activeSpell.fullChargedSpeed,  chargeProgress);
+        float size   = Mathf.Lerp(activeSpell.baseSize,   activeSpell.fullChargedSize,   chargeProgress);
 
         ArcaneBoltProjectile projectile = Instantiate(
-            projectilePrefab,
+            activeSpell.projectilePrefab,
             castPoint.position,
             castPoint.rotation
         );
 
-        projectile.Initialize(projectileDamage, projectileSpeed, projectileLifetime);
+        projectile.transform.localScale *= size;
+        projectile.Initialize(damage, speed, activeSpell.projectileLifetime);
 
-        if (castMuzzleVfx != null)
-            castMuzzleVfx.Play();
+        chargeSystem.StartCooldown(activeSpell.cooldown);
 
-        if (castAudioSource != null && castClip != null)
-            castAudioSource.PlayOneShot(castClip);
+        AudioClip clip = chargeProgress >= 0.9f && chargedCastClip != null
+            ? chargedCastClip
+            : castClip;
+
+        if (castMuzzleVfx != null) castMuzzleVfx.Play();
+        if (castAudioSource != null && clip != null)
+            castAudioSource.PlayOneShot(clip);
+
+        Debug.Log($"[{activeSpell.spellName}] Fired at {chargeProgress * 100f:F0}% " +
+                  $"| DMG:{damage:F1} SPD:{speed:F1} SIZE:{size:F2} " +
+                  $"| Cooldown: {activeSpell.cooldown}s");
     }
 }
