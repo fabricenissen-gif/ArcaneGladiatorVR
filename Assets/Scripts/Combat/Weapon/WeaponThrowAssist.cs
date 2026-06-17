@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(XRGrabInteractable))]
@@ -15,11 +16,16 @@ public class WeaponThrowAssist : MonoBehaviour
     [Header("Throw Style Settings")]
     public ThrowStyle currentThrowStyle = ThrowStyle.Dart;
 
+    [Header("Charge Integration")]
+    [Tooltip("Referenz zum Charge System (optional)")]
+    [SerializeField] private WeaponChargeSystem chargeSystem;
+    [Tooltip("Wie viel schneller fliegt das Schwert, wenn es MAX CHARGED ist?")]
+    [SerializeField] private float chargedThrowSpeedMultiplier = 3.0f;
+
     [Header("General Flight Settings")]
     [Tooltip("Ein leeres Child-Objekt, dessen Z-Achse in Richtung der Schwertspitze zeigt")]
     [SerializeField] private Transform flightDirectionRef;
-    
-    [Tooltip("Gibt dem Schwert beim Loslassen einen Extra-Schubs (1 = normal, 1.5 = 50% schneller)")]
+    [Tooltip("Gibt dem Schwert beim Loslassen einen Extra-Schubs")]
     [SerializeField] private float throwSpeedMultiplier = 1.3f;
 
     [Header("Dart Style Settings")]
@@ -36,7 +42,7 @@ public class WeaponThrowAssist : MonoBehaviour
     [SerializeField] private LayerMask stickableLayers;
     [SerializeField] private float minVelocityToStick = 3f;
     [SerializeField] private float penetrationDepth = 0.15f;
-    
+
     private Rigidbody rb;
     private XRGrabInteractable grabInteractable;
     private bool isThrown = false;
@@ -46,6 +52,7 @@ public class WeaponThrowAssist : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         grabInteractable = GetComponent<XRGrabInteractable>();
+        if (chargeSystem == null) chargeSystem = GetComponent<WeaponChargeSystem>();
     }
 
     private void OnEnable()
@@ -62,17 +69,22 @@ public class WeaponThrowAssist : MonoBehaviour
 
     private void OnReleased(SelectExitEventArgs args)
     {
-        if (!(args.interactorObject is UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor))
+        if (!(args.interactorObject is XRSocketInteractor))
         {
             if (rb.linearVelocity.magnitude > 0.5f)
             {
                 isThrown = true;
                 isStuck = false;
 
-                // --- TWEAK 1: SPEED BOOST ---
-                // Gibt dem Wurf den nötigen "Wumms", um befriedigend zu sein
-                rb.linearVelocity *= throwSpeedMultiplier;
-                
+                float currentMultiplier = throwSpeedMultiplier;
+                if (chargeSystem != null && chargeSystem.IsCharged)
+                {
+                    currentMultiplier = chargedThrowSpeedMultiplier;
+                    Debug.Log("CHARGED THROW!");
+                }
+
+                rb.linearVelocity *= currentMultiplier;
+
                 if (currentThrowStyle == ThrowStyle.Dart)
                 {
                     if (flightDirectionRef != null)
@@ -81,13 +93,12 @@ public class WeaponThrowAssist : MonoBehaviour
                         Vector3 spikeCOM = transform.InverseTransformPoint(flightDirectionRef.position);
                         rb.centerOfMass = Vector3.Lerp(originalCOM, spikeCOM, dartCenterOfMassOffset);
                     }
-
-                    rb.angularVelocity *= 0.1f; 
+                    rb.angularVelocity *= 0.1f;
                     rb.useGravity = false;
                 }
                 else if (currentThrowStyle == ThrowStyle.Chaotic)
                 {
-                    if(flightDirectionRef != null) rb.centerOfMass = transform.InverseTransformPoint(flightDirectionRef.position);
+                    if (flightDirectionRef != null) rb.centerOfMass = transform.InverseTransformPoint(flightDirectionRef.position);
                     rb.useGravity = true;
                 }
             }
@@ -99,11 +110,8 @@ public class WeaponThrowAssist : MonoBehaviour
         isThrown = false;
         rb.ResetCenterOfMass();
         rb.useGravity = true;
-        
-        if (isStuck)
-        {
-            ForceUnstick();
-        }
+
+        if (isStuck) ForceUnstick();
     }
 
     private void FixedUpdate()
@@ -119,7 +127,7 @@ public class WeaponThrowAssist : MonoBehaviour
 
                 Quaternion targetRotForRef = Quaternion.LookRotation(flightDir, flightDirectionRef.up);
                 Quaternion targetRotationOfParent = targetRotForRef * Quaternion.Inverse(flightDirectionRef.localRotation);
-                
+
                 rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotationOfParent, dartAlignmentSpeed * Time.fixedDeltaTime));
                 rb.angularVelocity = Vector3.Lerp(rb.angularVelocity, Vector3.zero, Time.fixedDeltaTime * 15f);
             }
@@ -139,12 +147,10 @@ public class WeaponThrowAssist : MonoBehaviour
         if (isThrown && !isStuck && rb.linearVelocity.magnitude >= minVelocityToStick)
         {
             if ((stickableLayers.value & (1 << collision.gameObject.layer)) > 0)
-            {
                 StickToSurface(collision);
-            }
             else
             {
-                isThrown = false; 
+                isThrown = false;
                 rb.ResetCenterOfMass();
                 rb.useGravity = true;
             }
@@ -155,7 +161,7 @@ public class WeaponThrowAssist : MonoBehaviour
     {
         isStuck = true;
         isThrown = false;
-        
+
         rb.ResetCenterOfMass();
         rb.useGravity = true;
 
@@ -166,9 +172,9 @@ public class WeaponThrowAssist : MonoBehaviour
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
-        // --- TWEAK 2: PARENTING ---
-        // Das Schwert wird dem getroffenen Objekt untergeordnet und bewegt sich mit ihm mit
         transform.SetParent(collision.transform, true);
+
+        if (chargeSystem != null) chargeSystem.ExpendCharge();
     }
 
     public void ForceUnstick()
@@ -181,10 +187,6 @@ public class WeaponThrowAssist : MonoBehaviour
             rb.ResetCenterOfMass();
             rb.useGravity = true;
         }
-
-        // --- WICHTIG FÜR TWEAK 2 ---
-        // Wenn das Schwert gegriffen oder vom Auto-Return zurückgeholt wird, 
-        // müssen wir es wieder vom Gegner entkoppeln!
         transform.SetParent(null, true);
     }
 }

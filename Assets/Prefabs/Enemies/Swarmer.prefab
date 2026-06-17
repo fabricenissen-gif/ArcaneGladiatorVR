@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 5668792174707776190}
   - component: {fileID: 8639038263238072208}
   - component: {fileID: 8298581329843663473}
+  - component: {fileID: 5902116450345955314}
   m_Layer: 6
   m_Name: Swarmer
   m_TagString: Untagged
@@ -201,6 +202,33 @@ MonoBehaviour:
   targetTransform: {fileID: 9027481459992531772}
   wobbleDistance: 0.12
   wobbleDuration: 0.12
+--- !u!54 &5902116450345955314
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4069515727537450685}
+  serializedVersion: 5
+  m_Mass: 0.3
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &4350451257439855457
 GameObject:
   m_ObjectHideFlags: 0

@@ -6,6 +6,7 @@ public class WeaponSweepDamage : MonoBehaviour
     [Header("References")]
     [SerializeField] private Transform[] samplePoints;
     [SerializeField] private WeaponHitFeedback hitFeedback;
+    [SerializeField] private WeaponChargeSystem chargeSystem;
 
     [Header("Hit Detection")]
     [SerializeField] private float sampleRadius = 0.14f;
@@ -14,12 +15,21 @@ public class WeaponSweepDamage : MonoBehaviour
 
     [Header("Damage")]
     [SerializeField] private float damage = 20f;
+    [SerializeField] private float chargedDamageMultiplier = 2f;
 
     [Header("Attack Window")]
     [SerializeField] private bool attackWindowActive = false;
 
+    [HideInInspector] public bool isFlying = false;
+
     private Vector3[] lastPositionsCenter;
     private readonly HashSet<Health> hitThisWindow = new HashSet<Health>();
+
+    private void Awake()
+    {
+        if (chargeSystem == null)
+            chargeSystem = GetComponent<WeaponChargeSystem>();
+    }
 
     private void Start()
     {
@@ -38,7 +48,7 @@ public class WeaponSweepDamage : MonoBehaviour
     {
         Physics.SyncTransforms();
 
-        if (!attackWindowActive)
+        if (!attackWindowActive || isFlying)
         {
             UpdateLastPositions();
             return;
@@ -47,34 +57,18 @@ public class WeaponSweepDamage : MonoBehaviour
         for (int i = 0; i < samplePoints.Length; i++)
         {
             Transform point = samplePoints[i];
-            if (point == null)
-                continue;
+            if (point == null) continue;
 
             Vector3 currentCenter = point.position;
             Vector3 previousCenter = lastPositionsCenter[i];
             Vector3 delta = currentCenter - previousCenter;
 
-            Vector3 hitDirection = delta.sqrMagnitude > 0.0001f
-                ? delta.normalized
-                : transform.forward;
-
+            Vector3 hitDirection = delta.sqrMagnitude > 0.0001f ? delta.normalized : transform.forward;
             Vector3 bladeWidthDirection = point.right;
 
             CheckTrack(previousCenter, currentCenter, hitDirection, sampleRadius);
-
-            CheckTrack(
-                previousCenter - bladeWidthDirection * bladeHalfWidth,
-                currentCenter - bladeWidthDirection * bladeHalfWidth,
-                hitDirection,
-                sampleRadius
-            );
-
-            CheckTrack(
-                previousCenter + bladeWidthDirection * bladeHalfWidth,
-                currentCenter + bladeWidthDirection * bladeHalfWidth,
-                hitDirection,
-                sampleRadius
-            );
+            CheckTrack(previousCenter - bladeWidthDirection * bladeHalfWidth, currentCenter - bladeWidthDirection * bladeHalfWidth, hitDirection, sampleRadius);
+            CheckTrack(previousCenter + bladeWidthDirection * bladeHalfWidth, currentCenter + bladeWidthDirection * bladeHalfWidth, hitDirection, sampleRadius);
 
             lastPositionsCenter[i] = currentCenter;
         }
@@ -85,7 +79,6 @@ public class WeaponSweepDamage : MonoBehaviour
         attackWindowActive = true;
         hitThisWindow.Clear();
         UpdateLastPositions();
-
         Debug.Log("Attack window started.");
     }
 
@@ -94,7 +87,6 @@ public class WeaponSweepDamage : MonoBehaviour
         attackWindowActive = false;
         hitThisWindow.Clear();
         UpdateLastPositions();
-
         Debug.Log("Attack window ended.");
     }
 
@@ -106,20 +98,10 @@ public class WeaponSweepDamage : MonoBehaviour
         if (distance > 0.0001f)
         {
             Vector3 direction = delta.normalized;
-
-            RaycastHit[] sweepHits = Physics.SphereCastAll(
-                start,
-                radius,
-                direction,
-                distance,
-                enemyLayers,
-                QueryTriggerInteraction.Collide
-            );
+            RaycastHit[] sweepHits = Physics.SphereCastAll(start, radius, direction, distance, enemyLayers, QueryTriggerInteraction.Collide);
 
             for (int h = 0; h < sweepHits.Length; h++)
-            {
                 TryDamageCollider(sweepHits[h].collider, hitDirection);
-            }
 
             CheckOverlapAtPosition(start + delta * 0.25f, hitDirection, radius);
             CheckOverlapAtPosition(start + delta * 0.5f, hitDirection, radius);
@@ -131,41 +113,38 @@ public class WeaponSweepDamage : MonoBehaviour
 
     private void CheckOverlapAtPosition(Vector3 position, Vector3 hitDirection, float radius)
     {
-        Collider[] overlapHits = Physics.OverlapSphere(
-            position,
-            radius,
-            enemyLayers,
-            QueryTriggerInteraction.Collide
-        );
-
+        Collider[] overlapHits = Physics.OverlapSphere(position, radius, enemyLayers, QueryTriggerInteraction.Collide);
         for (int i = 0; i < overlapHits.Length; i++)
-        {
             TryDamageCollider(overlapHits[i], hitDirection);
-        }
     }
 
     private void TryDamageCollider(Collider hitCollider, Vector3 hitDirection)
     {
-        if (hitCollider == null)
-            return;
+        if (hitCollider == null) return;
 
         Health health = hitCollider.GetComponentInParent<Health>();
-        if (health == null)
-            return;
-
-        if (hitThisWindow.Contains(health))
-            return;
+        if (health == null) return;
+        if (hitThisWindow.Contains(health)) return;
 
         hitThisWindow.Add(health);
-        health.TakeDamage(damage, hitDirection);
 
-        if (hitFeedback != null)
+        bool wasChargedHit = chargeSystem != null && chargeSystem.IsCharged;
+        float finalDamage = wasChargedHit ? damage * chargedDamageMultiplier : damage;
+
+        health.TakeDamage(finalDamage, hitDirection);
+
+        Vector3 hitPoint = hitCollider.ClosestPoint(transform.position);
+
+        if (wasChargedHit && chargeSystem != null)
         {
-            Vector3 feedbackPosition = hitCollider.ClosestPoint(transform.position);
-            hitFeedback.PlayHitFeedback(feedbackPosition, hitDirection);
+            chargeSystem.NotifyChargedHit(health, hitCollider, hitDirection, hitPoint, damage, finalDamage);
+            chargeSystem.ExpendCharge();
         }
 
-        Debug.Log($"Hit {health.name} for {damage} damage.");
+        if (hitFeedback != null)
+            hitFeedback.PlayHitFeedback(hitPoint, hitDirection);
+
+        Debug.Log($"Hit {health.name} for {finalDamage} damage.");
     }
 
     private void UpdateLastPositions()
