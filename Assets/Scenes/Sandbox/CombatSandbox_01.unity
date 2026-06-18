@@ -306,6 +306,38 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!1 &367517065 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1763125304621341941, guid: 53e1e5fbefcf4334c9e48bcd2d23d5e3, type: 3}
+  m_PrefabInstance: {fileID: 445461249221548125}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &367517071 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7028843295262645965, guid: 53e1e5fbefcf4334c9e48bcd2d23d5e3, type: 3}
+  m_PrefabInstance: {fileID: 445461249221548125}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 367517065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 034055e3418cc314580a50335b9c4546, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MagicHandCaster
+--- !u!114 &367517077
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 367517065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eee546201b139994bb97e46004347411, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpellBuildSwitcher
+  magicHandCaster: {fileID: 367517071}
+  loadoutData: {fileID: 11400000, guid: 4777deafa91d9c4459fd2f32d72461b2, type: 2}
+  switchBuildAction: {fileID: 6629511353077758288, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  currentBuild: 0
 --- !u!1 &421973706
 GameObject:
   m_ObjectHideFlags: 0
@@ -11882,7 +11914,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1763125304621341941, guid: 53e1e5fbefcf4334c9e48bcd2d23d5e3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 367517077}
   m_SourcePrefab: {fileID: 100100000, guid: 53e1e5fbefcf4334c9e48bcd2d23d5e3, type: 3}
 --- !u!1001 &695075549396941850
 PrefabInstance:

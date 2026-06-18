@@ -26,12 +26,14 @@ public class MagicHandCaster : MonoBehaviour
     [SerializeField] private ParticleSystem backfireVfx;
     [SerializeField] private ParticleSystem underchargeVfx;
 
+    public SpellData ActiveSpell => activeSpell;
+
     private void Awake()
     {
         if (chargeSystem == null)
             chargeSystem = GetComponent<MagicChargeSystem>();
 
-        if (activeSpell != null)
+        if (activeSpell != null && chargeSystem != null)
             chargeSystem.ChargeTime = activeSpell.chargeTime;
 
         if (playerHealth == null)
@@ -68,8 +70,13 @@ public class MagicHandCaster : MonoBehaviour
     {
         activeSpell = newSpell;
 
-        if (chargeSystem != null && newSpell != null)
-            chargeSystem.ChargeTime = newSpell.chargeTime;
+        if (chargeSystem != null)
+            chargeSystem.ChargeTime = newSpell != null ? newSpell.chargeTime : 0.8f;
+
+        if (newSpell != null)
+            Debug.Log("[MagicHandCaster] Aktiver Spell gesetzt: " + newSpell.spellName);
+        else
+            Debug.Log("[MagicHandCaster] Aktiver Spell entfernt.");
     }
 
     private void OnChargeReached()
@@ -100,12 +107,11 @@ public class MagicHandCaster : MonoBehaviour
 
     private void FireNormal(float chargeProgress)
     {
-        if (activeSpell.projectilePrefab == null || castPoint == null)
-            return;
+        if (activeSpell.projectilePrefab == null || castPoint == null) return;
 
         float damage = Mathf.Lerp(activeSpell.baseDamage, activeSpell.fullChargedDamage, chargeProgress);
-        float speed = Mathf.Lerp(activeSpell.baseSpeed, activeSpell.fullChargedSpeed, chargeProgress);
-        float size = Mathf.Lerp(activeSpell.baseSize, activeSpell.fullChargedSize, chargeProgress);
+        float speed  = Mathf.Lerp(activeSpell.baseSpeed,  activeSpell.fullChargedSpeed,  chargeProgress);
+        float size   = Mathf.Lerp(activeSpell.baseSize,   activeSpell.fullChargedSize,   chargeProgress);
 
         SpawnProjectile(activeSpell.projectilePrefab, damage, speed, size, activeSpell.projectileLifetime);
         chargeSystem.StartCooldown(activeSpell.cooldown);
@@ -126,20 +132,17 @@ public class MagicHandCaster : MonoBehaviour
             ? CursedChargeState.Overload
             : chargeSystem.GetCursedState(spell, chargeProgress, overchargeTime);
 
-        Debug.Log("[" + spell.spellName + "] Cursed Release | Progress:" +
-                  (chargeProgress * 100f).ToString("F0") + "% OverchargeTime:" +
-                  overchargeTime.ToString("F2") + "s → State:" + state);
+        Debug.Log("[" + spell.spellName + "] Cursed | " + (chargeProgress * 100f).ToString("F0") +
+                  "% OvT:" + overchargeTime.ToString("F2") + "s → " + state);
 
         switch (state)
         {
             case CursedChargeState.Undercharge:
                 HandleUndercharge(spell);
                 break;
-
             case CursedChargeState.SweetSpot:
                 HandleSweetSpot(spell);
                 break;
-
             case CursedChargeState.Overload:
                 HandleOverchargeBackfire(spell);
                 break;
@@ -161,17 +164,9 @@ public class MagicHandCaster : MonoBehaviour
                 if (spell.projectilePrefab != null && castPoint != null)
                 {
                     float weakDamage = spell.fullChargedDamage * spell.underchargeDamageMultiplier;
-                    float weakSize = spell.fullChargedSize * spell.underchargeDamageMultiplier;
-
-                    SpawnProjectile(
-                        spell.projectilePrefab,
-                        weakDamage,
-                        spell.baseSpeed,
-                        weakSize,
-                        spell.projectileLifetime
-                    );
+                    float weakSize   = spell.fullChargedSize   * spell.underchargeDamageMultiplier;
+                    SpawnProjectile(spell.projectilePrefab, weakDamage, spell.baseSpeed, weakSize, spell.projectileLifetime);
                 }
-
                 PlayFeedback(underchargeClip, underchargeVfx);
                 Debug.Log("[" + spell.spellName + "] UNDERCHARGE — schwacher Effekt");
                 break;
@@ -179,23 +174,19 @@ public class MagicHandCaster : MonoBehaviour
             case UnderchargeType.Backfire:
                 if (playerHealth == null)
                 {
-                    Debug.LogError("[MagicHandCaster] PlayerHealth fehlt — Undercharge Backfire kann keinen Schaden machen.");
+                    Debug.LogError("[MagicHandCaster] PlayerHealth fehlt — Undercharge Backfire hat keinen Schaden gemacht.");
                     return;
                 }
-
-                int underchargeSelfDamage = Mathf.RoundToInt(spell.backfireSelfDamage);
-                playerHealth.TakeDamage(underchargeSelfDamage, Vector3.zero);
-
+                playerHealth.TakeDamage(Mathf.RoundToInt(spell.backfireSelfDamage), Vector3.zero);
                 PlayFeedback(backfireClip, backfireVfx);
-                Debug.Log("[" + spell.spellName + "] UNDERCHARGE BACKFIRE — " + underchargeSelfDamage + " Selbstschaden");
+                Debug.Log("[" + spell.spellName + "] UNDERCHARGE BACKFIRE — " + spell.backfireSelfDamage + " Selbstschaden");
                 break;
         }
     }
 
     private void HandleSweetSpot(CursedSpellData spell)
     {
-        if (spell.projectilePrefab == null || castPoint == null)
-            return;
+        if (spell.projectilePrefab == null || castPoint == null) return;
 
         SpawnProjectile(
             spell.projectilePrefab,
@@ -207,7 +198,6 @@ public class MagicHandCaster : MonoBehaviour
 
         AudioClip clip = sweetSpotClip != null ? sweetSpotClip : chargedCastClip;
         PlayFeedback(clip, sweetSpotVfx);
-
         Debug.Log("[" + spell.spellName + "] SWEET SPOT — voller Effekt");
     }
 
@@ -215,13 +205,12 @@ public class MagicHandCaster : MonoBehaviour
     {
         if (playerHealth == null)
         {
-            Debug.LogError("[MagicHandCaster] PlayerHealth fehlt — Overcharge Backfire kann keinen Schaden machen.");
+            Debug.LogError("[MagicHandCaster] PlayerHealth fehlt — Overcharge Backfire hat keinen Schaden gemacht.");
             return;
         }
 
         int selfDamage = Mathf.RoundToInt(spell.backfireSelfDamage);
         playerHealth.TakeDamage(selfDamage, Vector3.zero);
-
         PlayFeedback(backfireClip, backfireVfx);
         Debug.Log("[" + spell.spellName + "] OVERCHARGE BACKFIRE — " + selfDamage + " Selbstschaden");
     }

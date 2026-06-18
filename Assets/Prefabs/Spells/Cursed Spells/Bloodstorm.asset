@@ -15,7 +15,7 @@ MonoBehaviour:
   spellName: Bloodstorm
   type: 0
   isCursed: 1
-  chargeTime: 0.8
+  chargeTime: 0.75
   cooldown: 0.5
   baseDamage: 5
   fullChargedDamage: 25
@@ -25,7 +25,6 @@ MonoBehaviour:
   baseSize: 1
   fullChargedSize: 2
   projectileLifetime: 4
-  sweetSpotStart: 0.75
   overloadDelay: 0.5
   underchargeType: 1
   backfireSelfDamage: 20
