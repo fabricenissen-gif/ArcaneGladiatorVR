@@ -317,6 +317,7 @@ GameObject:
   - component: {fileID: 5898518199052400446}
   - component: {fileID: 7028843295262645965}
   - component: {fileID: 3607588758523086416}
+  - component: {fileID: 2889001165650458221}
   m_Layer: 3
   m_Name: Left Controller
   m_TagString: Untagged
@@ -504,10 +505,10 @@ MonoBehaviour:
   chargeSystem: {fileID: 3607588758523086416}
   castPoint: {fileID: 1607147489966058559}
   activeSpell: {fileID: 11400000, guid: 31624c271bf14ee4ca55c72f50bb77a8, type: 2}
-  playerHealth: {fileID: 0}
+  playerHealth: {fileID: 1429519688294414735}
   castMuzzleVfx: {fileID: 0}
   castAudioSource: {fileID: 5009054819786096781}
-  castClip: {fileID: 8300000, guid: 738cb94bb188cdb4e9354b8ec68759a4, type: 3}
+  castClip: {fileID: 8300000, guid: 897fb370a9af065418cbd114e95eba49, type: 3}
   chargedCastClip: {fileID: 8300000, guid: a8c359fa356ed5447aabdbaf9992f8f8, type: 3}
   sweetSpotClip: {fileID: 8300000, guid: e89c2e03d9514f84493529d042521480, type: 3}
   backfireClip: {fileID: 8300000, guid: e8a8c16d6c914cd4baf4b4f297a616ba, type: 3}
@@ -536,6 +537,25 @@ MonoBehaviour:
   chargeLoopClip: {fileID: 8300000, guid: 12ab1544027a28e4ba9eb31340d4f206, type: 3}
   chargedReadyClip: {fileID: 8300000, guid: 0b653b3db1d0e7b4bbb2c3a5cf8dbe3c, type: 3}
   overloadWarningClip: {fileID: 8300000, guid: 738cb94bb188cdb4e9354b8ec68759a4, type: 3}
+--- !u!114 &2889001165650458221
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1763125304621341941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eee546201b139994bb97e46004347411, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpellBuildSwitcher
+  magicHandCaster: {fileID: 7028843295262645965}
+  loadoutData: {fileID: 11400000, guid: 4777deafa91d9c4459fd2f32d72461b2, type: 2}
+  switchButtonPath: <XRController>{LeftHand}/secondaryButton
+  switchAudioSource: {fileID: 0}
+  switchToAClip: {fileID: 0}
+  switchToBClip: {fileID: 0}
+  currentBuild: 0
 --- !u!1 &1779683141447539963
 GameObject:
   m_ObjectHideFlags: 0
@@ -1130,19 +1150,19 @@ MonoBehaviour:
   maxHealth: 100
   damageCooldown: 0.25
   deathDelay: 1.5
-  damageOverlay: {fileID: 0}
+  damageOverlay: {fileID: 2083014618671707616}
   flashDuration: 0.4
   maxAlpha: 0.6
   leftHapticPlayer: {fileID: 0}
   rightHapticPlayer: {fileID: 0}
   hapticAmplitude: 0.5
   hapticDuration: 0.2
-  hurtAudioSource: {fileID: 0}
-  hurtSound: {fileID: 0}
-  hurtVolume: 0.8
-  deathAudioSource: {fileID: 0}
-  deathSound: {fileID: 0}
-  deathVolume: 1
+  hurtAudioSource: {fileID: 1137386846387181257}
+  hurtSound: {fileID: 8300000, guid: 024700b6b54f4e24790f1133877ffcf3, type: 3}
+  hurtVolume: 0.33
+  deathAudioSource: {fileID: 3244127376236657019}
+  deathSound: {fileID: 8300000, guid: 4353336375488fd4cb1300a0fbf59fd9, type: 3}
+  deathVolume: 0.319
 --- !u!1 &2676276889761305246
 GameObject:
   m_ObjectHideFlags: 0

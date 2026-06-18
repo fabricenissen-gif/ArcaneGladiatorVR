@@ -9,7 +9,13 @@ public class SpellBuildSwitcher : MonoBehaviour
     [SerializeField] private SpellLoadoutData loadoutData;
 
     [Header("Input")]
-    [SerializeField] private InputActionReference switchBuildAction;
+    [Tooltip("z.B. <XRController>{LeftHand}/secondaryButton")]
+    [SerializeField] private string switchButtonPath = "<XRController>{LeftHand}/secondaryButton";
+
+    [Header("Switch Sound")]
+    [SerializeField] private AudioSource switchAudioSource;
+    [SerializeField] private AudioClip switchToAClip;
+    [SerializeField] private AudioClip switchToBClip;
 
     [Header("Current Build")]
     [SerializeField] private SpellBuildType currentBuild = SpellBuildType.BuildA;
@@ -19,24 +25,32 @@ public class SpellBuildSwitcher : MonoBehaviour
 
     public Action<SpellBuildType, SpellData> OnBuildSwitched;
 
+    private InputAction switchAction;
+
     private void Awake()
     {
         if (magicHandCaster == null)
             magicHandCaster = GetComponent<MagicHandCaster>();
+
+        switchAction = new InputAction(
+            name: "SwitchBuild",
+            type: InputActionType.Button,
+            binding: switchButtonPath
+        );
     }
 
     private void OnEnable()
     {
-        if (switchBuildAction?.action == null) return;
-        switchBuildAction.action.Enable();
-        switchBuildAction.action.performed += OnSwitchBuildPerformed;
+        if (switchAction == null) return;
+        switchAction.Enable();
+        switchAction.performed += OnSwitchBuildPerformed;
     }
 
     private void OnDisable()
     {
-        if (switchBuildAction?.action == null) return;
-        switchBuildAction.action.performed -= OnSwitchBuildPerformed;
-        switchBuildAction.action.Disable();
+        if (switchAction == null) return;
+        switchAction.performed -= OnSwitchBuildPerformed;
+        switchAction.Disable();
     }
 
     private void Start()
@@ -100,6 +114,8 @@ public class SpellBuildSwitcher : MonoBehaviour
 
         SpellData spellToEquip = GetSpellForBuild(currentBuild);
 
+        PlaySwitchSound();
+
         if (spellToEquip == null)
         {
             Debug.LogWarning("[SpellBuildSwitcher] Kein Spell für " + currentBuild + " gesetzt.");
@@ -112,5 +128,22 @@ public class SpellBuildSwitcher : MonoBehaviour
         OnBuildSwitched?.Invoke(currentBuild, spellToEquip);
 
         Debug.Log("[SpellBuildSwitcher] Aktiver Build: " + currentBuild + " | Spell: " + spellToEquip.spellName);
+    }
+
+    private void PlaySwitchSound()
+    {
+        if (switchAudioSource == null) return;
+
+        AudioClip clip = currentBuild == SpellBuildType.BuildA
+            ? switchToAClip
+            : switchToBClip;
+
+        // Fallback: wenn nur ein Clip gesetzt ist, nimm den für beide
+        if (clip == null)
+            clip = switchToAClip != null ? switchToAClip : switchToBClip;
+
+        if (clip == null) return;
+
+        switchAudioSource.PlayOneShot(clip);
     }
 }
