@@ -20,9 +20,9 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float maxAlpha = 0.6f;
 
     [Header("Feedback Haptisch")]
-    [Tooltip("Ziehe hier den Left Controller rein (er zieht sich automatisch den HapticImpulsePlayer)")]
+    [Tooltip("Ziehe hier den Left Controller rein")]
     [SerializeField] private HapticImpulsePlayer leftHapticPlayer;
-    [Tooltip("Ziehe hier den Right Controller rein (er zieht sich automatisch den HapticImpulsePlayer)")]
+    [Tooltip("Ziehe hier den Right Controller rein")]
     [SerializeField] private HapticImpulsePlayer rightHapticPlayer;
     [SerializeField, Range(0f, 1f)] private float hapticAmplitude = 0.5f;
     [SerializeField] private float hapticDuration = 0.2f;
@@ -42,21 +42,26 @@ public class PlayerHealth : MonoBehaviour
     private bool isDead;
     private Coroutine flashCoroutine;
 
-    // Öffentliche Getter für das Heal-System
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
+
+    private void Awake()
+    {
+        ForceHideOverlay();
+    }
+
+    private void OnEnable()
+    {
+        ForceHideOverlay();
+    }
 
     private void Start()
     {
         currentHealth = maxHealth;
         isDead = false;
+        nextDamageTime = 0f;
 
-        if (damageOverlay != null)
-        {
-            Color c = damageOverlay.color;
-            c.a = 0f;
-            damageOverlay.color = c;
-        }
+        ForceHideOverlay();
 
         Debug.Log("[PlayerHealth] Start health: " + currentHealth);
     }
@@ -64,7 +69,7 @@ public class PlayerHealth : MonoBehaviour
     public void TakeDamage(int damage, Vector3 hitDirection)
     {
         if (isDead) return;
-
+        if (damage <= 0) return;
         if (Time.time < nextDamageTime) return;
 
         nextDamageTime = Time.time + damageCooldown;
@@ -73,7 +78,7 @@ public class PlayerHealth : MonoBehaviour
         PlayHurtSound();
         TriggerDamageFeedback();
 
-        Debug.Log("[PlayerHealth] Current health: " + currentHealth);
+        Debug.Log("[PlayerHealth] Took damage: " + damage + " | Current health: " + currentHealth);
 
         if (currentHealth <= 0)
         {
@@ -82,68 +87,100 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // NEUE HEAL-METHODE FÜR DEN BURGER
     public void Heal(int healAmount)
     {
         if (isDead) return;
+        if (healAmount <= 0) return;
 
         currentHealth += healAmount;
         if (currentHealth > maxHealth)
-        {
             currentHealth = maxHealth;
-        }
 
-        Debug.Log($"[PlayerHealth] Healed for {healAmount}. Current health: {currentHealth}");
-        
-        // Optional: Hier könntest du noch einen grünen Flash oder Sound einbauen!
+        Debug.Log("[PlayerHealth] Healed for " + healAmount + ". Current health: " + currentHealth);
     }
 
     private void TriggerDamageFeedback()
     {
         if (damageOverlay != null)
         {
-            if (flashCoroutine != null) StopCoroutine(flashCoroutine);
+            if (flashCoroutine != null)
+                StopCoroutine(flashCoroutine);
+
             flashCoroutine = StartCoroutine(FlashRoutine());
         }
 
-        if (leftHapticPlayer != null) leftHapticPlayer.SendHapticImpulse(hapticAmplitude, hapticDuration);
-        if (rightHapticPlayer != null) rightHapticPlayer.SendHapticImpulse(hapticAmplitude, hapticDuration);
+        if (leftHapticPlayer != null)
+            leftHapticPlayer.SendHapticImpulse(hapticAmplitude, hapticDuration);
+
+        if (rightHapticPlayer != null)
+            rightHapticPlayer.SendHapticImpulse(hapticAmplitude, hapticDuration);
     }
 
     private IEnumerator FlashRoutine()
     {
+        if (damageOverlay == null)
+            yield break;
+
         Color color = damageOverlay.color;
         color.a = maxAlpha;
         damageOverlay.color = color;
 
         float elapsedTime = 0f;
+
         while (elapsedTime < flashDuration)
         {
             elapsedTime += Time.deltaTime;
-            color.a = Mathf.Lerp(maxAlpha, 0f, elapsedTime / flashDuration);
+            float t = Mathf.Clamp01(elapsedTime / flashDuration);
+
+            color.a = Mathf.Lerp(maxAlpha, 0f, t);
             damageOverlay.color = color;
+
             yield return null;
         }
 
         color.a = 0f;
         damageOverlay.color = color;
+        flashCoroutine = null;
+    }
+
+    private void ForceHideOverlay()
+    {
+        if (damageOverlay == null)
+            return;
+
+        if (flashCoroutine != null)
+        {
+            StopCoroutine(flashCoroutine);
+            flashCoroutine = null;
+        }
+
+        Color color = damageOverlay.color;
+        color.a = 0f;
+        damageOverlay.color = color;
+
+        damageOverlay.enabled = true;
     }
 
     private void PlayHurtSound()
     {
-        if (hurtAudioSource == null || hurtSound == null) return;
+        if (hurtAudioSource == null || hurtSound == null)
+            return;
+
         hurtAudioSource.PlayOneShot(hurtSound, hurtVolume);
     }
 
     private void PlayDeathSound()
     {
-        if (deathAudioSource == null || deathSound == null) return;
+        if (deathAudioSource == null || deathSound == null)
+            return;
+
         deathAudioSource.PlayOneShot(deathSound, deathVolume);
     }
 
     private void Die()
     {
         if (isDead) return;
+
         isDead = true;
 
         if (hurtAudioSource != null && hurtAudioSource.isPlaying)
