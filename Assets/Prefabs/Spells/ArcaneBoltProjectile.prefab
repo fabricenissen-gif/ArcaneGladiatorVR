@@ -102,6 +102,7 @@ GameObject:
   - component: {fileID: 6102172423486678363}
   - component: {fileID: 5191586487524325867}
   - component: {fileID: 6282766707896392136}
+  - component: {fileID: 4933580721089679629}
   m_Layer: 0
   m_Name: ArcaneBoltProjectile
   m_TagString: Untagged
@@ -164,7 +165,7 @@ MonoBehaviour:
   impactVfxPrefab: {fileID: 0}
   hitLayers:
     serializedVersion: 2
-    m_Bits: 223
+    m_Bits: 64
 --- !u!114 &6282766707896392136
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -178,3 +179,30 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcaneBoltAutoRotate
   rotationSpeed: {x: 0, y: 360, z: 720}
+--- !u!54 &4933580721089679629
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5483516901161807541}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0

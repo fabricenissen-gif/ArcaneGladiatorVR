@@ -113,7 +113,14 @@ public class MagicHandCaster : MonoBehaviour
         float speed  = Mathf.Lerp(activeSpell.baseSpeed,  activeSpell.fullChargedSpeed,  chargeProgress);
         float size   = Mathf.Lerp(activeSpell.baseSize,   activeSpell.fullChargedSize,   chargeProgress);
 
-        SpawnProjectile(activeSpell.projectilePrefab, damage, speed, size, activeSpell.projectileLifetime);
+        SpawnProjectile(
+            activeSpell.projectilePrefab,
+            damage, speed, size,
+            activeSpell.projectileLifetime,
+            activeSpell.spellTag,
+            activeSpell.tagDuration
+        );
+
         chargeSystem.StartCooldown(activeSpell.cooldown);
 
         AudioClip clip = chargeProgress >= 0.9f && chargedCastClip != null
@@ -165,7 +172,14 @@ public class MagicHandCaster : MonoBehaviour
                 {
                     float weakDamage = spell.fullChargedDamage * spell.underchargeDamageMultiplier;
                     float weakSize   = spell.fullChargedSize   * spell.underchargeDamageMultiplier;
-                    SpawnProjectile(spell.projectilePrefab, weakDamage, spell.baseSpeed, weakSize, spell.projectileLifetime);
+
+                    SpawnProjectile(
+                        spell.projectilePrefab,
+                        weakDamage, spell.baseSpeed, weakSize,
+                        spell.projectileLifetime,
+                        spell.spellTag,
+                        spell.tagDuration * spell.underchargeDamageMultiplier
+                    );
                 }
                 PlayFeedback(underchargeClip, underchargeVfx);
                 Debug.Log("[" + spell.spellName + "] UNDERCHARGE — schwacher Effekt");
@@ -193,7 +207,9 @@ public class MagicHandCaster : MonoBehaviour
             spell.fullChargedDamage,
             spell.fullChargedSpeed,
             spell.fullChargedSize,
-            spell.projectileLifetime
+            spell.projectileLifetime,
+            spell.spellTag,
+            spell.tagDuration
         );
 
         AudioClip clip = sweetSpotClip != null ? sweetSpotClip : chargedCastClip;
@@ -215,11 +231,11 @@ public class MagicHandCaster : MonoBehaviour
         Debug.Log("[" + spell.spellName + "] OVERCHARGE BACKFIRE — " + selfDamage + " Selbstschaden");
     }
 
-    private void SpawnProjectile(ArcaneBoltProjectile prefab, float damage, float speed, float size, float lifetime)
+    private void SpawnProjectile(ArcaneBoltProjectile prefab, float damage, float speed, float size, float lifetime, TagType tag, float tagDuration)
     {
         ArcaneBoltProjectile projectile = Instantiate(prefab, castPoint.position, castPoint.rotation);
         projectile.transform.localScale *= size;
-        projectile.Initialize(damage, speed, lifetime);
+        projectile.Initialize(damage, speed, lifetime, tag, tagDuration);
 
         if (castMuzzleVfx != null)
             castMuzzleVfx.Play();

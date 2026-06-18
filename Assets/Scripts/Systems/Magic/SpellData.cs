@@ -19,6 +19,12 @@ public class SpellData : ScriptableObject
     public float baseDamage = 5f;
     public float fullChargedDamage = 25f;
 
+    [Header("TAG")]
+    [Tooltip("Welchen TAG appliziert dieser Spell beim Treffer?")]
+    public TagType spellTag = TagType.ARCANE;
+    [Tooltip("Wie lange bleibt der TAG auf dem Gegner?")]
+    public float tagDuration = 3f;
+
     [Header("Projektil")]
     public ArcaneBoltProjectile projectilePrefab;
     public float baseSpeed = 14f;
