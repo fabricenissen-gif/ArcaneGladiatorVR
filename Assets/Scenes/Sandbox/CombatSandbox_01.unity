@@ -5923,25 +5923,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1189361171 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4069515727537450685, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-  m_PrefabInstance: {fileID: 410680173182741182}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1189361182
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1189361171}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 37707b3e680279b48a9305eea5f13a67, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TagHandler
-  maxPoisonStacks: 3
-  maxBleedStacks: 5
 --- !u!1 &1206875767
 GameObject:
   m_ObjectHideFlags: 0
@@ -11922,74 +11903,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2013886507}
   m_CullTransparentMesh: 1
---- !u!1001 &410680173182741182
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 1295503789119378034, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -1.401
-      objectReference: {fileID: 0}
-    - target: {fileID: 1295503789119378034, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.9
-      objectReference: {fileID: 0}
-    - target: {fileID: 1295503789119378034, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -3.457
-      objectReference: {fileID: 0}
-    - target: {fileID: 1295503789119378034, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1295503789119378034, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1295503789119378034, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1295503789119378034, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1295503789119378034, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1295503789119378034, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1295503789119378034, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4069515727537450685, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_Name
-      value: Swarmer
-      objectReference: {fileID: 0}
-    - target: {fileID: 5141378340705925004, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5902116450345955314, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      propertyPath: m_IsKinematic
-      value: 1
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 4069515727537450685, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1189361182}
-  m_SourcePrefab: {fileID: 100100000, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
 --- !u!1001 &445461249221548125
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12660,6 +12573,5 @@ SceneRoots:
   - {fileID: 1863104083}
   - {fileID: 511255427}
   - {fileID: 1708490687}
-  - {fileID: 410680173182741182}
   - {fileID: 4994009884952603747}
   - {fileID: 1809839823}
