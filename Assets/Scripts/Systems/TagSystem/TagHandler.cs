@@ -10,10 +10,8 @@ public class TagHandler : MonoBehaviour
     [Tooltip("Maximale BLEED-Stacks")]
     [SerializeField] private int maxBleedStacks = 5;
 
-    // Aktive TAGs auf diesem Gegner
     private readonly Dictionary<TagType, TagInstance> activeTags = new Dictionary<TagType, TagInstance>();
 
-    // Events — Modifier hören hier rein
     public event Action<TagType, TagInstance> OnTagApplied;
     public event Action<TagType, TagInstance> OnTagRefreshed;
     public event Action<TagType> OnTagExpired;
@@ -81,15 +79,8 @@ public class TagHandler : MonoBehaviour
         Debug.Log("[TagHandler] " + gameObject.name + " → Alle TAGs entfernt.");
     }
 
-    public void SetMaxPoisonStacks(int max)
-    {
-        maxPoisonStacks = max;
-    }
-
-    public void SetMaxBleedStacks(int max)
-    {
-        maxBleedStacks = max;
-    }
+    public void SetMaxPoisonStacks(int max) { maxPoisonStacks = max; }
+    public void SetMaxBleedStacks(int max)  { maxBleedStacks = max; }
 
     // --- Intern ---
 
@@ -98,13 +89,12 @@ public class TagHandler : MonoBehaviour
         switch (type)
         {
             case TagType.POISON:
-                int poisonMax = maxPoisonStacks;
-                if (existing.StackCount < poisonMax)
+                if (existing.StackCount < maxPoisonStacks)
                 {
                     existing.AddStack();
                     existing.Refresh(duration);
                     OnTagRefreshed?.Invoke(type, existing);
-                    Debug.Log("[TagHandler] " + gameObject.name + " → POISON Stack " + existing.StackCount + "/" + poisonMax);
+                    Debug.Log("[TagHandler] " + gameObject.name + " → POISON Stack " + existing.StackCount + "/" + maxPoisonStacks);
                 }
                 else
                 {
@@ -114,13 +104,12 @@ public class TagHandler : MonoBehaviour
                 break;
 
             case TagType.BLEED:
-                int bleedMax = maxBleedStacks;
-                if (existing.StackCount < bleedMax)
+                if (existing.StackCount < maxBleedStacks)
                 {
                     existing.AddStack();
                     existing.Refresh(duration);
                     OnTagRefreshed?.Invoke(type, existing);
-                    Debug.Log("[TagHandler] " + gameObject.name + " → BLEED Stack " + existing.StackCount + "/" + bleedMax);
+                    Debug.Log("[TagHandler] " + gameObject.name + " → BLEED Stack " + existing.StackCount + "/" + maxBleedStacks);
                 }
                 else
                 {
@@ -136,8 +125,6 @@ public class TagHandler : MonoBehaviour
             case TagType.ARCANE:
             case TagType.MARKED:
             case TagType.FROZEN:
-            case TagType.WEIGHT:
-                // Kein Stack — nur Dauer refreshen
                 existing.Refresh(duration);
                 OnTagRefreshed?.Invoke(type, existing);
                 Debug.Log("[TagHandler] " + gameObject.name + " → " + type + " refreshed (" + duration + "s)");

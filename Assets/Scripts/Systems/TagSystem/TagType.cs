@@ -1,13 +1,13 @@
 public enum TagType
 {
+    NONE,
     FIRE,
     FROST,
     ELECTRIC,
-    POISON,
-    BLEED,
     WIND,
     ARCANE,
+    POISON,
+    BLEED,
     MARKED,
-    FROZEN,
-    WEIGHT
+    FROZEN
 }

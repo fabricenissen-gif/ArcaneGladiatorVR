@@ -14,7 +14,7 @@ public class Health : MonoBehaviour
     private EnemyHealthBar healthBar;
     private Collider[] allColliders;
     private SimpleEnemyChase simpleEnemyChase;
-    private SwarmerAI swarmerAI; // Neu: Referenz für den Swarmer
+    private SwarmerAI swarmerAI;
     private bool isDead;
 
     private void Awake()
@@ -26,18 +26,48 @@ public class Health : MonoBehaviour
         healthBar = GetComponentInChildren<EnemyHealthBar>();
         allColliders = GetComponentsInChildren<Collider>();
         simpleEnemyChase = GetComponent<SimpleEnemyChase>();
-        swarmerAI = GetComponent<SwarmerAI>(); // Sucht auch nach dem neuen Swarmer
+        swarmerAI = GetComponent<SwarmerAI>();
 
         UpdateHealthBar();
     }
 
+    // Standard TakeDamage — weiße Zahl
     public void TakeDamage(float amount, Vector3 hitDirection)
     {
-        if (isDead)
-            return;
+        TakeDamageInternal(amount, hitDirection, TagType.NONE, false);
+    }
+
+    // Tag-Schaden — farbige Zahl je nach TagType
+    public void TakeDamageTagged(float amount, Vector3 hitDirection, TagType tag)
+    {
+        TakeDamageInternal(amount, hitDirection, tag, false);
+    }
+
+    // Reaktionsschaden — gold, größer
+    public void TakeDamageReaction(float amount, Vector3 hitDirection, bool isExposed = false)
+    {
+        TakeDamageInternal(amount, hitDirection, TagType.NONE, true, isExposed);
+    }
+
+    private void TakeDamageInternal(float amount, Vector3 hitDirection, TagType tag, bool isReaction, bool isExposed = false)
+    {
+        if (isDead) return;
 
         currentHealth -= amount;
         currentHealth = Mathf.Max(currentHealth, 0f);
+
+        // Damage Number
+        if (DamageNumberSpawner.Instance != null)
+        {
+            Vector3 spawnPos = transform.position;
+
+            if (isReaction)
+                DamageNumberSpawner.Instance.SpawnReaction(spawnPos, amount, isExposed);
+            else if (tag != TagType.NONE)
+                DamageNumberSpawner.Instance.SpawnTagged(spawnPos, amount, tag);
+            else
+                DamageNumberSpawner.Instance.Spawn(spawnPos, amount);
+        }
 
         if (hitWobble != null)
             hitWobble.PlayWobble(hitDirection);
@@ -47,18 +77,13 @@ public class Health : MonoBehaviour
 
         if (simpleEnemyChase != null)
             simpleEnemyChase.NotifyHit();
-            
-        // Optional: Wenn du willst, dass der Swarmer reagiert, 
-        // könntest du hier auch Methoden in SwarmerAI aufrufen.
 
         UpdateHealthBar();
 
         Debug.Log($"{gameObject.name} took {amount} damage. HP left: {currentHealth}");
 
         if (currentHealth <= 0f)
-        {
             StartDeath(hitDirection);
-        }
     }
 
     private void UpdateHealthBar()
@@ -69,31 +94,19 @@ public class Health : MonoBehaviour
 
     private void StartDeath(Vector3 hitDirection)
     {
-        if (isDead)
-            return;
+        if (isDead) return;
 
         isDead = true;
 
         if (hitWobble != null)
-        {
-            hitWobble.ResetToRestPose(); 
-        }
+            hitWobble.ResetToRestPose();
 
-        // --- WICHTIGE ÄNDERUNG ---
-        // Wenn wir die Collider beim Tod ausschalten, fallen Schwerter, 
-        // die NICHT im Gegner stecken (z.B. die ihn nur streifen), durch ihn hindurch.
-        // Das ist meistens gewünscht.
         foreach (Collider col in allColliders)
-        {
             col.enabled = false;
-        }
 
         if (healthBarRoot != null)
-        {
             healthBarRoot.SetActive(false);
-        }
-        
-        // Die AI-Skripte deaktivieren, damit er aufhört anzugreifen/zu fliegen
+
         if (simpleEnemyChase != null) simpleEnemyChase.enabled = false;
         if (swarmerAI != null) swarmerAI.enabled = false;
 
@@ -115,21 +128,14 @@ public class Health : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t01 = elapsed / duration;
-
             transform.localScale = Vector3.Lerp(originalScale, deathScale, t01);
             yield return null;
         }
 
-        // --- NEU: WAFFEN ABWERFEN ---
-        // Bevor das Objekt zerstört wird, suchen wir in allen Children nach einem steckenden Schwert.
-        // Das ist wichtig, da das Schwert sonst mit dem Gegner gelöscht wird.
         WeaponThrowAssist[] stuckWeapons = GetComponentsInChildren<WeaponThrowAssist>();
         foreach (var weapon in stuckWeapons)
-        {
             weapon.ForceUnstick();
-        }
 
-        // Jetzt können wir den toten Gegner sicher zerstören
         Destroy(gameObject);
     }
 }
