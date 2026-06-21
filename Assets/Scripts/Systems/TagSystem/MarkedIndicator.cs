@@ -1,11 +1,12 @@
 using UnityEngine;
 
 /// <summary>
-/// Visualisiert MARKED:
-///   Option B — Health.cs appliziert +markedDamageAmp% passiv
-///   Option C — Outline-Glow (Quick Outline by Chris Nolet)
-///              seenThroughWalls = true  → Outline.Mode.OutlineAll
-///              seenThroughWalls = false → Outline.Mode.OutlineVisible
+/// Visualisiert MARKED und EXPOSED via Outline-Farbe:
+///   MARKED   → orange Outline (+ VFX), durch Wände sichtbar
+///   EXPOSED  → rote/pulsierende Outline
+///   Beide weg → Outline aus
+///
+/// Priorität: EXPOSED überschreibt MARKED-Farbe solange aktiv.
 /// </summary>
 public class MarkedIndicator : MonoBehaviour
 {
@@ -13,20 +14,33 @@ public class MarkedIndicator : MonoBehaviour
     [SerializeField] private ParticleSystem markedVfxPrefab;
     [SerializeField] private Vector3        spawnOffset = new Vector3(0f, 2f, 0f);
 
-    [Header("Outline (Quick Outline)")]
-    [SerializeField] private bool  outlineEnabled    = true;
-    [SerializeField] private Color outlineColor      = new Color(1f, 0.6f, 0f, 1f);
-    [SerializeField] private float outlineWidth      = 5f;
+    [Header("Outline — MARKED")]
+    [SerializeField] private bool  outlineEnabled   = true;
+    [SerializeField] private Color markedColor      = new Color(1f, 0.6f, 0f, 1f);
+    [SerializeField] private float markedWidth      = 5f;
     [Tooltip("true = durch Wände sichtbar (OutlineAll), false = nur wenn sichtbar (OutlineVisible)")]
-    [SerializeField] private bool  seenThroughWalls  = true;
+    [SerializeField] private bool  seenThroughWalls = true;
 
-    private TagHandler     tagHandler;
-    private ParticleSystem activeVfx;
-    private Outline        outline;
+    [Header("Outline — EXPOSED")]
+    [SerializeField] private Color exposedColor     = new Color(1f, 0.1f, 0.1f, 1f);
+    [SerializeField] private float exposedWidth     = 8f;
+    [SerializeField] private bool  exposedPulse     = true;
+    [SerializeField] private float pulseSpeed       = 3f;
+    [SerializeField] private float pulseMinWidth    = 3f;
+
+    private TagHandler        tagHandler;
+    private TagReactionSystem reactionSystem;
+    private ParticleSystem    activeVfx;
+    private Outline           outline;
+
+    private bool isMarked  = false;
+    private bool isExposed = false;
 
     private void Awake()
     {
-        tagHandler = GetComponent<TagHandler>();
+        tagHandler     = GetComponent<TagHandler>();
+        reactionSystem = GetComponent<TagReactionSystem>();
+
         if (tagHandler == null)
             Debug.LogError($"[MarkedIndicator] Kein TagHandler auf {gameObject.name}");
 
@@ -49,33 +63,73 @@ public class MarkedIndicator : MonoBehaviour
         tagHandler.OnTagExpired -= OnTagExpired;
     }
 
+    private void Update()
+    {
+        if (reactionSystem == null) return;
+
+        bool exposedNow = reactionSystem.IsExposed;
+
+        if (exposedNow != isExposed)
+        {
+            isExposed = exposedNow;
+            RefreshOutline();
+        }
+
+        if (isExposed && exposedPulse && outline != null && outline.enabled)
+        {
+            float t = (Mathf.Sin(Time.time * pulseSpeed) + 1f) * 0.5f;
+            outline.OutlineWidth = Mathf.Lerp(pulseMinWidth, exposedWidth, t);
+        }
+    }
+
     private void OnTagApplied(TagType type, TagInstance instance)
     {
-        if (type == TagType.MARKED) ShowEffect();
+        if (type != TagType.MARKED) return;
+        isMarked = true;
+        ShowVfx();
+        RefreshOutline();
     }
 
     private void OnTagRemoved(TagType type)
     {
-        if (type == TagType.MARKED) HideEffect();
+        if (type != TagType.MARKED) return;
+        isMarked = false;
+        HideVfx();
+        RefreshOutline();
     }
 
     private void OnTagExpired(TagType type)
     {
-        if (type == TagType.MARKED) HideEffect();
-    }
-
-    private void ShowEffect()
-    {
-        ShowVfx();
-        if (outline != null) outline.enabled = true;
-        Debug.Log($"[MarkedIndicator] {gameObject.name} — MARKED aktiv");
-    }
-
-    private void HideEffect()
-    {
+        if (type != TagType.MARKED) return;
+        isMarked = false;
         HideVfx();
-        if (outline != null) outline.enabled = false;
-        Debug.Log($"[MarkedIndicator] {gameObject.name} — MARKED entfernt");
+        RefreshOutline();
+    }
+
+    private void RefreshOutline()
+    {
+        if (outline == null) return;
+
+        if (isExposed)
+        {
+            outline.OutlineMode  = Outline.Mode.OutlineAll;
+            outline.OutlineColor = exposedColor;
+            outline.OutlineWidth = exposedWidth;
+            outline.enabled      = true;
+        }
+        else if (isMarked)
+        {
+            outline.OutlineMode  = seenThroughWalls
+                ? Outline.Mode.OutlineAll
+                : Outline.Mode.OutlineVisible;
+            outline.OutlineColor = markedColor;
+            outline.OutlineWidth = markedWidth;
+            outline.enabled      = true;
+        }
+        else
+        {
+            outline.enabled = false;
+        }
     }
 
     private void ShowVfx()
@@ -102,12 +156,8 @@ public class MarkedIndicator : MonoBehaviour
         if (outline == null)
             outline = gameObject.AddComponent<Outline>();
 
-        outline.OutlineMode  = seenThroughWalls
-            ? Outline.Mode.OutlineAll
-            : Outline.Mode.OutlineVisible;
-
-        outline.OutlineColor = outlineColor;
-        outline.OutlineWidth = outlineWidth;
-        outline.enabled      = false; // startet aus — nur bei aktivem MARKED ein
+        outline.OutlineColor = markedColor;
+        outline.OutlineWidth = markedWidth;
+        outline.enabled      = false;
     }
 }
