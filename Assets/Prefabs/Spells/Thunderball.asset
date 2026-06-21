@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8eafdd338862e0c41a01d71d056a3189, type: 3}
-  m_Name: ArcaneBolt
+  m_Name: Thunderball
   m_EditorClassIdentifier: Assembly-CSharp::SpellData
-  spellName: Arcane Bolt
+  spellName: Thunderball
   type: 0
   isCursed: 0
   chargeTime: 0.8
   cooldown: 0.5
   baseDamage: 5
   fullChargedDamage: 25
-  spellTag: 5
+  spellTag: 3
   tagDuration: 3
   projectilePrefab: {fileID: 5191586487524325867, guid: 5bed134a33848da4982c131dbf27e888, type: 3}
   baseSpeed: 14

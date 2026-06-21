@@ -349,6 +349,9 @@ GameObject:
   - component: {fileID: 215606998224622472}
   - component: {fileID: 3943860722596726210}
   - component: {fileID: 7495641849429956631}
+  - component: {fileID: 104635155614258322}
+  - component: {fileID: 3111638205161840381}
+  - component: {fileID: 2316820092682376060}
   m_Layer: 6
   m_Name: EnemyChaseDummy_01
   m_TagString: Untagged
@@ -592,6 +595,66 @@ MonoBehaviour:
   targetTransform: {fileID: 5036948923678209399}
   wobbleDistance: 0.12
   wobbleDuration: 0.12
+--- !u!114 &104635155614258322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5816260732055507738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f82de6a49cfea32419f1f9b2eeaf7a63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MarkedIndicator
+  markedVfxPrefab: {fileID: 2779230980678777332, guid: 75b9886a10e0d3e4e854e226c62ec336, type: 3}
+  spawnOffset: {x: 0, y: 1, z: 0}
+--- !u!114 &3111638205161840381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5816260732055507738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37707b3e680279b48a9305eea5f13a67, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TagHandler
+  maxPoisonStacks: 3
+  maxBleedStacks: 5
+--- !u!114 &2316820092682376060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5816260732055507738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 606826e4c864c6f46858d9a5a1538b10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TagReactionSystem
+  steamExplosionDamage: 20
+  steamExplosionRadius: 3
+  steamExplosionKnockbackForce: 6
+  shatterDamage: 30
+  shatterStunDuration: 1.5
+  blizzardRadius: 4
+  blizzardDuration: 3
+  arcaneIgniteDamage: 15
+  venomBurstDamagePerPoisonStack: 10
+  thunderstrikeDamage: 18
+  thunderstrikeChainRange: 5
+  shockBleedDamagePerBleedStack: 8
+  cauterizeDamage: 22
+  exposedDuration: 5
+  exposedDamageMultiplier: 2
+  toxicFumesDuration: 4
+  toxicFumesRadius: 3
+  enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!1 &6916612276773176884
 GameObject:
   m_ObjectHideFlags: 0

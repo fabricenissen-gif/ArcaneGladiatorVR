@@ -332,6 +332,9 @@ GameObject:
   - component: {fileID: 2444989361653576878}
   - component: {fileID: 7322169381631187024}
   - component: {fileID: 4766455531310648291}
+  - component: {fileID: 5087746013736702475}
+  - component: {fileID: -8046997689960680529}
+  - component: {fileID: -3147726839824730884}
   m_Layer: 6
   m_Name: EnemyDummy_01
   m_TagString: Untagged
@@ -521,3 +524,63 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealthBar
   fillImage: {fileID: 6538001147759129414}
+--- !u!114 &5087746013736702475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9108634127881482417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f82de6a49cfea32419f1f9b2eeaf7a63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MarkedIndicator
+  markedVfxPrefab: {fileID: 2779230980678777332, guid: 75b9886a10e0d3e4e854e226c62ec336, type: 3}
+  spawnOffset: {x: 0, y: 1, z: 0}
+--- !u!114 &-8046997689960680529
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9108634127881482417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37707b3e680279b48a9305eea5f13a67, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TagHandler
+  maxPoisonStacks: 3
+  maxBleedStacks: 5
+--- !u!114 &-3147726839824730884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9108634127881482417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 606826e4c864c6f46858d9a5a1538b10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TagReactionSystem
+  steamExplosionDamage: 20
+  steamExplosionRadius: 3
+  steamExplosionKnockbackForce: 6
+  shatterDamage: 30
+  shatterStunDuration: 1.5
+  blizzardRadius: 4
+  blizzardDuration: 3
+  arcaneIgniteDamage: 15
+  venomBurstDamagePerPoisonStack: 10
+  thunderstrikeDamage: 18
+  thunderstrikeChainRange: 5
+  shockBleedDamagePerBleedStack: 8
+  cauterizeDamage: 22
+  exposedDuration: 5
+  exposedDamageMultiplier: 2
+  toxicFumesDuration: 4
+  toxicFumesRadius: 3
+  enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 64

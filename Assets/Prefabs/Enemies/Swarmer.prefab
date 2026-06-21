@@ -19,6 +19,8 @@ GameObject:
   - component: {fileID: 8298581329843663473}
   - component: {fileID: 5902116450345955314}
   - component: {fileID: 7756592339700613175}
+  - component: {fileID: 4460463581760482288}
+  - component: {fileID: -6892782284464582352}
   m_Layer: 6
   m_Name: Swarmer
   m_TagString: Untagged
@@ -244,6 +246,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TagHandler
   maxPoisonStacks: 3
   maxBleedStacks: 5
+--- !u!114 &4460463581760482288
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4069515727537450685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f82de6a49cfea32419f1f9b2eeaf7a63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MarkedIndicator
+  markedVfxPrefab: {fileID: 2779230980678777332, guid: 75b9886a10e0d3e4e854e226c62ec336, type: 3}
+  spawnOffset: {x: 0, y: 1, z: 0}
+--- !u!114 &-6892782284464582352
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4069515727537450685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 606826e4c864c6f46858d9a5a1538b10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TagReactionSystem
+  steamExplosionDamage: 20
+  steamExplosionRadius: 3
+  steamExplosionKnockbackForce: 6
+  shatterDamage: 30
+  shatterStunDuration: 1.5
+  blizzardRadius: 4
+  blizzardDuration: 3
+  arcaneIgniteDamage: 15
+  venomBurstDamagePerPoisonStack: 10
+  thunderstrikeDamage: 18
+  thunderstrikeChainRange: 5
+  shockBleedDamagePerBleedStack: 8
+  cauterizeDamage: 22
+  exposedDuration: 5
+  toxicFumesDuration: 4
+  toxicFumesRadius: 3
+  enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!1 &4350451257439855457
 GameObject:
   m_ObjectHideFlags: 0

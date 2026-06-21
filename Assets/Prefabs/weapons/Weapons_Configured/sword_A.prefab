@@ -29,7 +29,8 @@ Transform:
   m_LocalPosition: {x: -0, y: 0.864, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 8912678314833517420}
   m_Father: {fileID: 1887494369031067538}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &1905941886984204098
@@ -197,7 +198,6 @@ GameObject:
   - component: {fileID: 8099578433088712333}
   - component: {fileID: 543103295907372220}
   - component: {fileID: 3866978691933145277}
-  - component: {fileID: 8359502771317762655}
   m_Layer: 0
   m_Name: sword_A
   m_TagString: Untagged
@@ -215,7 +215,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.27059805, y: 0.6532815, z: -0.27059805, w: 0.6532815}
   m_LocalPosition: {x: 0, y: 1.179, z: -1.391}
-  m_LocalScale: {x: -0.27000013, y: 0.40000004, z: 0.3000001}
+  m_LocalScale: {x: 0.4, y: 0.4, z: 0.4}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4778396078357525472}
@@ -390,7 +390,9 @@ MonoBehaviour:
     m_Bits: 64
   damage: 20
   chargedDamageMultiplier: 2
+  exposedMultiplier: 2
   attackWindowActive: 0
+  isFlying: 0
 --- !u!114 &651238876653322362
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -403,7 +405,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b5fe5da9f73b7648998e4c19a59b965, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponHitFeedback
-  hitVfxPrefab: {fileID: 0}
+  hitVfxPrefab: {fileID: 1975120713042553711, guid: 2f5e3ff0957c22c4ba55cf3b1334e0ab, type: 3}
   vfxLifetime: 0.15
   audioSource: {fileID: 5874687725120637999}
   hitSounds:
@@ -426,7 +428,7 @@ MonoBehaviour:
   m_InteractionManager: {fileID: 0}
   m_Colliders: []
   m_InteractionLayers:
-    m_Bits: 1
+    m_Bits: 4
   m_DistanceCalculationMode: 1
   m_SelectMode: 0
   m_FocusMode: 1
@@ -567,6 +569,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponThrowAssist
   currentThrowStyle: 0
+  chargeSystem: {fileID: 0}
+  chargedThrowSpeedMultiplier: 3
   flightDirectionRef: {fileID: 7271394034984242361}
   throwSpeedMultiplier: 1.3
   dartAlignmentSpeed: 10
@@ -591,16 +595,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponChargeSystem
   timeToCharge: 1.5
-  bladeRenderer: {fileID: 0}
-  unchargedColor: {r: 1, g: 1, b: 1, a: 1}
-  chargedColor: {r: 1, g: 0, b: 0.41081965, a: 1}
+  chargedEffectObject: {fileID: 9036831071926268475, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
   onChargeStarted:
     m_PersistentCalls:
       m_Calls: []
   onCharged:
-    m_PersistentCalls:
-      m_Calls: []
-  onChargeReleasedEarly:
     m_PersistentCalls:
       m_Calls: []
   onChargeConsumed:
@@ -609,24 +608,6 @@ MonoBehaviour:
   onChargedHit:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &8359502771317762655
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1259436196658269480}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 771220d2222c746449e0b46eb76333a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ChargedHitKnockbackModifier
-  chargeSystem: {fileID: 3866978691933145277}
-  enableKnockback: 1
-  knockbackForce: 8
-  forceMode: 1
-  flattenVerticalDirection: 1
-  upwardBonus: 0.15
 --- !u!1 &2776369822259509937
 GameObject:
   m_ObjectHideFlags: 0
@@ -936,7 +917,7 @@ Transform:
   m_GameObject: {fileID: 6535702035393099081}
   serializedVersion: 2
   m_LocalRotation: {x: -0.27059805, y: 0.6532815, z: 0.27059805, w: 0.6532815}
-  m_LocalPosition: {x: 0.142, y: 0.063, z: 0}
+  m_LocalPosition: {x: 0.125, y: 0.132, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1035,3 +1016,65 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1887494369031067538}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1230599637038974901
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 8299774104837661}
+    m_Modifications:
+    - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.6532815
+      objectReference: {fileID: 0}
+    - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.27059808
+      objectReference: {fileID: 0}
+    - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.6532815
+      objectReference: {fileID: 0}
+    - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.27059808
+      objectReference: {fileID: 0}
+    - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9036831071926268475, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_Name
+      value: ChargeVfx
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+--- !u!4 &8912678314833517420 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+  m_PrefabInstance: {fileID: 1230599637038974901}
+  m_PrefabAsset: {fileID: 0}

@@ -1,6 +1,11 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// Verwaltet Leben, Schaden und Tod eines Gegners.
+/// Schadensvisualisierung (DamageNumbers) läuft hier zentral.
+/// Caller bestimmen NUR Art und Menge des Schadens — niemals die Farbe.
+/// </summary>
 public class Health : MonoBehaviour
 {
     [SerializeField] private float maxHealth = 100f;
@@ -8,6 +13,7 @@ public class Health : MonoBehaviour
     [SerializeField] private GameObject healthBarRoot;
 
     private float currentHealth;
+    private bool isDead;
 
     private HitWobble hitWobble;
     private HitReaction hitReaction;
@@ -15,75 +21,76 @@ public class Health : MonoBehaviour
     private Collider[] allColliders;
     private SimpleEnemyChase simpleEnemyChase;
     private SwarmerAI swarmerAI;
-    private bool isDead;
+
+    public float CurrentHealth => currentHealth;
+    public float MaxHealth => maxHealth;
+    public bool IsDead => isDead;
 
     private void Awake()
     {
-        currentHealth = maxHealth;
-
-        hitWobble = GetComponent<HitWobble>();
-        hitReaction = GetComponent<HitReaction>();
-        healthBar = GetComponentInChildren<EnemyHealthBar>();
-        allColliders = GetComponentsInChildren<Collider>();
+        currentHealth    = maxHealth;
+        hitWobble        = GetComponent<HitWobble>();
+        hitReaction      = GetComponent<HitReaction>();
+        healthBar        = GetComponentInChildren<EnemyHealthBar>();
+        allColliders     = GetComponentsInChildren<Collider>();
         simpleEnemyChase = GetComponent<SimpleEnemyChase>();
-        swarmerAI = GetComponent<SwarmerAI>();
-
+        swarmerAI        = GetComponent<SwarmerAI>();
         UpdateHealthBar();
     }
 
-    // Standard TakeDamage — weiße Zahl
+    // ─────────────────────────────────────────
+    // Public API
+    // ─────────────────────────────────────────
+
+    /// Normaler physischer Schaden (weiße Zahl)
     public void TakeDamage(float amount, Vector3 hitDirection)
-    {
-        TakeDamageInternal(amount, hitDirection, TagType.NONE, false);
-    }
+        => TakeDamageInternal(amount, hitDirection, TagType.NONE, false, false);
 
-    // Tag-Schaden — farbige Zahl je nach TagType
+    /// Schaden durch einen Spell-Tag (farbige Zahl, kein Reaction-Bonus)
     public void TakeDamageTagged(float amount, Vector3 hitDirection, TagType tag)
-    {
-        TakeDamageInternal(amount, hitDirection, tag, false);
-    }
+        => TakeDamageInternal(amount, hitDirection, tag, false, false);
 
-    // Reaktionsschaden — gold, größer
+    /// Reaktionsschaden (Exposed oder andere Reaction) — große goldene/rote Zahl
     public void TakeDamageReaction(float amount, Vector3 hitDirection, bool isExposed = false)
-    {
-        TakeDamageInternal(amount, hitDirection, TagType.NONE, true, isExposed);
-    }
+        => TakeDamageInternal(amount, hitDirection, TagType.NONE, true, isExposed);
 
-    private void TakeDamageInternal(float amount, Vector3 hitDirection, TagType tag, bool isReaction, bool isExposed = false)
+    // ─────────────────────────────────────────
+    // Intern
+    // ─────────────────────────────────────────
+
+    private void TakeDamageInternal(float amount, Vector3 hitDirection,
+                                     TagType tag, bool isReaction, bool isExposed)
     {
         if (isDead) return;
 
-        currentHealth -= amount;
-        currentHealth = Mathf.Max(currentHealth, 0f);
+        currentHealth = Mathf.Max(currentHealth - amount, 0f);
 
-        // Damage Number
-        if (DamageNumberSpawner.Instance != null)
-        {
-            Vector3 spawnPos = transform.position;
+        SpawnDamageNumber(amount, tag, isReaction, isExposed);
 
-            if (isReaction)
-                DamageNumberSpawner.Instance.SpawnReaction(spawnPos, amount, isExposed);
-            else if (tag != TagType.NONE)
-                DamageNumberSpawner.Instance.SpawnTagged(spawnPos, amount, tag);
-            else
-                DamageNumberSpawner.Instance.Spawn(spawnPos, amount);
-        }
-
-        if (hitWobble != null)
-            hitWobble.PlayWobble(hitDirection);
-
-        if (hitReaction != null)
-            hitReaction.PlayReaction(hitDirection);
-
-        if (simpleEnemyChase != null)
-            simpleEnemyChase.NotifyHit();
+        if (hitWobble != null)        hitWobble.PlayWobble(hitDirection);
+        if (hitReaction != null)      hitReaction.PlayReaction(hitDirection);
+        if (simpleEnemyChase != null) simpleEnemyChase.NotifyHit();
 
         UpdateHealthBar();
 
-        Debug.Log($"{gameObject.name} took {amount} damage. HP left: {currentHealth}");
+        Debug.Log($"{gameObject.name} took {amount:F1} | HP:{currentHealth:F1} | tag:{tag} reaction:{isReaction} exposed:{isExposed}");
 
         if (currentHealth <= 0f)
             StartDeath(hitDirection);
+    }
+
+    private void SpawnDamageNumber(float amount, TagType tag, bool isReaction, bool isExposed)
+    {
+        if (DamageNumberSpawner.Instance == null) return;
+
+        Vector3 pos = transform.position;
+
+        if (isReaction)
+            DamageNumberSpawner.Instance.SpawnReaction(pos, amount, isExposed);
+        else if (tag != TagType.NONE)
+            DamageNumberSpawner.Instance.SpawnTagged(pos, amount, tag);
+        else
+            DamageNumberSpawner.Instance.Spawn(pos, amount);
     }
 
     private void UpdateHealthBar()
@@ -92,14 +99,16 @@ public class Health : MonoBehaviour
             healthBar.SetNormalized(currentHealth / maxHealth);
     }
 
+    // ─────────────────────────────────────────
+    // Tod
+    // ─────────────────────────────────────────
+
     private void StartDeath(Vector3 hitDirection)
     {
         if (isDead) return;
-
         isDead = true;
 
-        if (hitWobble != null)
-            hitWobble.ResetToRestPose();
+        if (hitWobble != null) hitWobble.ResetToRestPose();
 
         foreach (Collider col in allColliders)
             col.enabled = false;
@@ -108,7 +117,7 @@ public class Health : MonoBehaviour
             healthBarRoot.SetActive(false);
 
         if (simpleEnemyChase != null) simpleEnemyChase.enabled = false;
-        if (swarmerAI != null) swarmerAI.enabled = false;
+        if (swarmerAI != null)        swarmerAI.enabled = false;
 
         StartCoroutine(DeathRoutine(hitDirection));
     }
@@ -117,24 +126,21 @@ public class Health : MonoBehaviour
     {
         Debug.Log($"{gameObject.name} died.");
 
-        Transform t = transform;
-        Vector3 originalScale = t.localScale;
-        Vector3 deathScale = new Vector3(originalScale.x * 0.85f, originalScale.y * 0.6f, originalScale.z * 0.85f);
-
-        float duration = deathDelay;
+        Vector3 originalScale = transform.localScale;
+        Vector3 deathScale    = new Vector3(originalScale.x * 0.85f,
+                                            originalScale.y * 0.6f,
+                                            originalScale.z * 0.85f);
         float elapsed = 0f;
 
-        while (elapsed < duration)
+        while (elapsed < deathDelay)
         {
             elapsed += Time.deltaTime;
-            float t01 = elapsed / duration;
-            transform.localScale = Vector3.Lerp(originalScale, deathScale, t01);
+            transform.localScale = Vector3.Lerp(originalScale, deathScale, elapsed / deathDelay);
             yield return null;
         }
 
-        WeaponThrowAssist[] stuckWeapons = GetComponentsInChildren<WeaponThrowAssist>();
-        foreach (var weapon in stuckWeapons)
-            weapon.ForceUnstick();
+        WeaponThrowAssist[] stuck = GetComponentsInChildren<WeaponThrowAssist>();
+        foreach (var w in stuck) w.ForceUnstick();
 
         Destroy(gameObject);
     }
