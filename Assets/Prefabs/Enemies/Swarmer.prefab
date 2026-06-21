@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: 5902116450345955314}
   - component: {fileID: 7756592339700613175}
   - component: {fileID: 4460463581760482288}
+  - component: {fileID: -7296826448550223648}
   - component: {fileID: -6892782284464582352}
   m_Layer: 6
   m_Name: Swarmer
@@ -270,6 +271,20 @@ MonoBehaviour:
   exposedPulse: 1
   pulseSpeed: 3
   pulseMinWidth: 3
+--- !u!114 &-7296826448550223648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4069515727537450685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff1a383d390b32844811e89058a8686f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FireTagIndicator
+  fireVfxPrefab: {fileID: 0}
+  spawnOffset: {x: 0, y: 0.5, z: 0}
 --- !u!114 &-6892782284464582352
 MonoBehaviour:
   m_ObjectHideFlags: 0

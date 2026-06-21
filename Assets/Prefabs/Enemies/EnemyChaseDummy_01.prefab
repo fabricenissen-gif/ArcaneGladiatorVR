@@ -350,6 +350,7 @@ GameObject:
   - component: {fileID: 3943860722596726210}
   - component: {fileID: 7495641849429956631}
   - component: {fileID: 104635155614258322}
+  - component: {fileID: -8637901443297805880}
   - component: {fileID: 3111638205161840381}
   - component: {fileID: 2316820092682376060}
   m_Layer: 6
@@ -619,6 +620,20 @@ MonoBehaviour:
   exposedPulse: 1
   pulseSpeed: 3
   pulseMinWidth: 3
+--- !u!114 &-8637901443297805880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5816260732055507738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff1a383d390b32844811e89058a8686f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FireTagIndicator
+  fireVfxPrefab: {fileID: 7009600383531409129, guid: 6d7914005a8083747a42266c86b62cc7, type: 3}
+  spawnOffset: {x: 0, y: 0.5, z: 0}
 --- !u!114 &3111638205161840381
 MonoBehaviour:
   m_ObjectHideFlags: 0
