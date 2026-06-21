@@ -1,21 +1,36 @@
 using UnityEngine;
 
+/// <summary>
+/// Visualisiert MARKED:
+///   Option B — Health.cs appliziert +markedDamageAmp% passiv
+///   Option C — Outline-Glow (Quick Outline by Chris Nolet)
+///              seenThroughWalls = true  → Outline.Mode.OutlineAll
+///              seenThroughWalls = false → Outline.Mode.OutlineVisible
+/// </summary>
 public class MarkedIndicator : MonoBehaviour
 {
-    [Tooltip("Partikel-Prefab das über dem Gegner erscheint")]
+    [Header("Partikel VFX")]
     [SerializeField] private ParticleSystem markedVfxPrefab;
-    [Tooltip("Offset über dem Gegner")]
-    [SerializeField] private Vector3 spawnOffset = new Vector3(0f, 2f, 0f);
+    [SerializeField] private Vector3        spawnOffset = new Vector3(0f, 2f, 0f);
 
-    private TagHandler tagHandler;
+    [Header("Outline (Quick Outline)")]
+    [SerializeField] private bool  outlineEnabled    = true;
+    [SerializeField] private Color outlineColor      = new Color(1f, 0.6f, 0f, 1f);
+    [SerializeField] private float outlineWidth      = 5f;
+    [Tooltip("true = durch Wände sichtbar (OutlineAll), false = nur wenn sichtbar (OutlineVisible)")]
+    [SerializeField] private bool  seenThroughWalls  = true;
+
+    private TagHandler     tagHandler;
     private ParticleSystem activeVfx;
+    private Outline        outline;
 
     private void Awake()
     {
         tagHandler = GetComponent<TagHandler>();
-
         if (tagHandler == null)
-            Debug.LogError("[MarkedIndicator] Kein TagHandler auf " + gameObject.name);
+            Debug.LogError($"[MarkedIndicator] Kein TagHandler auf {gameObject.name}");
+
+        SetupOutline();
     }
 
     private void OnEnable()
@@ -36,47 +51,63 @@ public class MarkedIndicator : MonoBehaviour
 
     private void OnTagApplied(TagType type, TagInstance instance)
     {
-        if (type == TagType.MARKED)
-            ShowEffect();
+        if (type == TagType.MARKED) ShowEffect();
     }
 
     private void OnTagRemoved(TagType type)
     {
-        if (type == TagType.MARKED)
-            HideEffect();
+        if (type == TagType.MARKED) HideEffect();
     }
 
     private void OnTagExpired(TagType type)
     {
-        if (type == TagType.MARKED)
-            HideEffect();
+        if (type == TagType.MARKED) HideEffect();
     }
 
     private void ShowEffect()
     {
-        if (markedVfxPrefab == null)
-        {
-            Debug.LogWarning("[MarkedIndicator] Kein VFX Prefab zugewiesen auf " + gameObject.name);
-            return;
-        }
-
-        if (activeVfx != null) return;
-
-        activeVfx = Instantiate(markedVfxPrefab, transform.position + spawnOffset, Quaternion.identity);
-        activeVfx.transform.SetParent(transform);
-        activeVfx.Play();
-
-        Debug.Log("[MarkedIndicator] " + gameObject.name + " MARKED Effekt aktiv.");
+        ShowVfx();
+        if (outline != null) outline.enabled = true;
+        Debug.Log($"[MarkedIndicator] {gameObject.name} — MARKED aktiv");
     }
 
     private void HideEffect()
     {
-        if (activeVfx == null) return;
+        HideVfx();
+        if (outline != null) outline.enabled = false;
+        Debug.Log($"[MarkedIndicator] {gameObject.name} — MARKED entfernt");
+    }
 
+    private void ShowVfx()
+    {
+        if (markedVfxPrefab == null || activeVfx != null) return;
+        activeVfx = Instantiate(markedVfxPrefab, transform.position + spawnOffset, Quaternion.identity);
+        activeVfx.transform.SetParent(transform);
+        activeVfx.Play();
+    }
+
+    private void HideVfx()
+    {
+        if (activeVfx == null) return;
         activeVfx.Stop();
         Destroy(activeVfx.gameObject, 1f);
         activeVfx = null;
+    }
 
-        Debug.Log("[MarkedIndicator] " + gameObject.name + " MARKED Effekt entfernt.");
+    private void SetupOutline()
+    {
+        if (!outlineEnabled) return;
+
+        outline = GetComponent<Outline>();
+        if (outline == null)
+            outline = gameObject.AddComponent<Outline>();
+
+        outline.OutlineMode  = seenThroughWalls
+            ? Outline.Mode.OutlineAll
+            : Outline.Mode.OutlineVisible;
+
+        outline.OutlineColor = outlineColor;
+        outline.OutlineWidth = outlineWidth;
+        outline.enabled      = false; // startet aus — nur bei aktivem MARKED ein
     }
 }

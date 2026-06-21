@@ -1,16 +1,15 @@
 using System.Collections;
 using UnityEngine;
 
-/// <summary>
-/// Verwaltet Leben, Schaden und Tod eines Gegners.
-/// Schadensvisualisierung (DamageNumbers) läuft hier zentral.
-/// Caller bestimmen NUR Art und Menge des Schadens — niemals die Farbe.
-/// </summary>
 public class Health : MonoBehaviour
 {
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float deathDelay = 1.2f;
     [SerializeField] private GameObject healthBarRoot;
+
+    [Header("MARKED Passiv")]
+    [Tooltip("Schadensverstärkung wenn Gegner MARKED ist (z.B. 0.25 = +25%)")]
+    [SerializeField] private float markedDamageAmp = 0.25f;
 
     private float currentHealth;
     private bool isDead;
@@ -21,6 +20,7 @@ public class Health : MonoBehaviour
     private Collider[] allColliders;
     private SimpleEnemyChase simpleEnemyChase;
     private SwarmerAI swarmerAI;
+    private TagHandler tagHandler;
 
     public float CurrentHealth => currentHealth;
     public float MaxHealth => maxHealth;
@@ -35,33 +35,29 @@ public class Health : MonoBehaviour
         allColliders     = GetComponentsInChildren<Collider>();
         simpleEnemyChase = GetComponent<SimpleEnemyChase>();
         swarmerAI        = GetComponent<SwarmerAI>();
+        tagHandler       = GetComponent<TagHandler>();
         UpdateHealthBar();
     }
 
-    // ─────────────────────────────────────────
-    // Public API
-    // ─────────────────────────────────────────
-
-    /// Normaler physischer Schaden (weiße Zahl)
     public void TakeDamage(float amount, Vector3 hitDirection)
         => TakeDamageInternal(amount, hitDirection, TagType.NONE, false, false);
 
-    /// Schaden durch einen Spell-Tag (farbige Zahl, kein Reaction-Bonus)
     public void TakeDamageTagged(float amount, Vector3 hitDirection, TagType tag)
         => TakeDamageInternal(amount, hitDirection, tag, false, false);
 
-    /// Reaktionsschaden (Exposed oder andere Reaction) — große goldene/rote Zahl
     public void TakeDamageReaction(float amount, Vector3 hitDirection, bool isExposed = false)
         => TakeDamageInternal(amount, hitDirection, TagType.NONE, true, isExposed);
-
-    // ─────────────────────────────────────────
-    // Intern
-    // ─────────────────────────────────────────
 
     private void TakeDamageInternal(float amount, Vector3 hitDirection,
                                      TagType tag, bool isReaction, bool isExposed)
     {
         if (isDead) return;
+
+        // MARKED Passiv: +markedDamageAmp% auf jeden Schaden
+        // Ausnahme: Exposed hat eigenen Multiplier — kein doppeltes Stapeln
+        bool isMarked = !isExposed && tagHandler != null && tagHandler.HasTag(TagType.MARKED);
+        if (isMarked)
+            amount *= (1f + markedDamageAmp);
 
         currentHealth = Mathf.Max(currentHealth - amount, 0f);
 
@@ -73,7 +69,7 @@ public class Health : MonoBehaviour
 
         UpdateHealthBar();
 
-        Debug.Log($"{gameObject.name} took {amount:F1} | HP:{currentHealth:F1} | tag:{tag} reaction:{isReaction} exposed:{isExposed}");
+        Debug.Log($"{gameObject.name} took {amount:F1} | HP:{currentHealth:F1} | tag:{tag} reaction:{isReaction} exposed:{isExposed} marked:{isMarked}");
 
         if (currentHealth <= 0f)
             StartDeath(hitDirection);
@@ -82,9 +78,7 @@ public class Health : MonoBehaviour
     private void SpawnDamageNumber(float amount, TagType tag, bool isReaction, bool isExposed)
     {
         if (DamageNumberSpawner.Instance == null) return;
-
         Vector3 pos = transform.position;
-
         if (isReaction)
             DamageNumberSpawner.Instance.SpawnReaction(pos, amount, isExposed);
         else if (tag != TagType.NONE)
@@ -99,23 +93,14 @@ public class Health : MonoBehaviour
             healthBar.SetNormalized(currentHealth / maxHealth);
     }
 
-    // ─────────────────────────────────────────
-    // Tod
-    // ─────────────────────────────────────────
-
     private void StartDeath(Vector3 hitDirection)
     {
         if (isDead) return;
         isDead = true;
 
         if (hitWobble != null) hitWobble.ResetToRestPose();
-
-        foreach (Collider col in allColliders)
-            col.enabled = false;
-
-        if (healthBarRoot != null)
-            healthBarRoot.SetActive(false);
-
+        foreach (Collider col in allColliders) col.enabled = false;
+        if (healthBarRoot != null) healthBarRoot.SetActive(false);
         if (simpleEnemyChase != null) simpleEnemyChase.enabled = false;
         if (swarmerAI != null)        swarmerAI.enabled = false;
 
@@ -125,13 +110,11 @@ public class Health : MonoBehaviour
     private IEnumerator DeathRoutine(Vector3 hitDirection)
     {
         Debug.Log($"{gameObject.name} died.");
-
         Vector3 originalScale = transform.localScale;
         Vector3 deathScale    = new Vector3(originalScale.x * 0.85f,
                                             originalScale.y * 0.6f,
                                             originalScale.z * 0.85f);
         float elapsed = 0f;
-
         while (elapsed < deathDelay)
         {
             elapsed += Time.deltaTime;
@@ -141,7 +124,6 @@ public class Health : MonoBehaviour
 
         WeaponThrowAssist[] stuck = GetComponentsInChildren<WeaponThrowAssist>();
         foreach (var w in stuck) w.ForceUnstick();
-
         Destroy(gameObject);
     }
 }
