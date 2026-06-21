@@ -350,9 +350,10 @@ GameObject:
   - component: {fileID: 3943860722596726210}
   - component: {fileID: 7495641849429956631}
   - component: {fileID: 104635155614258322}
-  - component: {fileID: -8637901443297805880}
   - component: {fileID: 3111638205161840381}
   - component: {fileID: 2316820092682376060}
+  - component: {fileID: -2159384382169138304}
+  - component: {fileID: -2388938482434226180}
   m_Layer: 6
   m_Name: EnemyChaseDummy_01
   m_TagString: Untagged
@@ -620,20 +621,6 @@ MonoBehaviour:
   exposedPulse: 1
   pulseSpeed: 3
   pulseMinWidth: 3
---- !u!114 &-8637901443297805880
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5816260732055507738}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ff1a383d390b32844811e89058a8686f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FireTagIndicator
-  fireVfxPrefab: {fileID: 7009600383531409129, guid: 6d7914005a8083747a42266c86b62cc7, type: 3}
-  spawnOffset: {x: 0, y: 0.5, z: 0}
 --- !u!114 &3111638205161840381
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -687,6 +674,45 @@ MonoBehaviour:
   enemyLayerMask:
     serializedVersion: 2
     m_Bits: 64
+--- !u!114 &-2159384382169138304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5816260732055507738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72f0fc37316f50d488e2cede047cb13c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TagVfxIndicator
+  entries:
+  - tagType: 1
+    vfxPrefab: {fileID: 7009600383531409129, guid: 6d7914005a8083747a42266c86b62cc7, type: 3}
+    spawnOffset: {x: 0, y: 0.5, z: 0}
+  - tagType: 3
+    vfxPrefab: {fileID: 0}
+    spawnOffset: {x: 0, y: 0.5, z: 0}
+  - tagType: 6
+    vfxPrefab: {fileID: 0}
+    spawnOffset: {x: 0, y: 0.3, z: 0}
+  - tagType: 2
+    vfxPrefab: {fileID: 0}
+    spawnOffset: {x: 0, y: 0.5, z: 0}
+--- !u!114 &-2388938482434226180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5816260732055507738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff19e4b2975d90a49a8a43570193d225, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FireTagHandler
+  tickDamage: 2
+  tickInterval: 1
 --- !u!1 &6916612276773176884
 GameObject:
   m_ObjectHideFlags: 0
