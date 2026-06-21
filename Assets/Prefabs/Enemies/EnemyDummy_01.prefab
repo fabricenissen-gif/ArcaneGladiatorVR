@@ -600,7 +600,7 @@ MonoBehaviour:
   arcaneIgniteTicks: 4
   arcaneIgniteDuration: 3
   arcaneIgniteTickDamage: 4
-  burningVfxPrefab: {fileID: 0}
+  burningVfxPrefab: {fileID: 1379199155223456419, guid: e8929e297e2875a4ebfd9b931f7a148a, type: 3}
   venomBurstDamagePerPoisonStack: 10
   thunderstrikeDamage: 18
   thunderstrikeChainRange: 5

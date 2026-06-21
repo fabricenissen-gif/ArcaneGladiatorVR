@@ -49,7 +49,7 @@ MonoBehaviour:
   colorDefault: {r: 1, g: 1, b: 1, a: 1}
   colorFire: {r: 1, g: 0.42, b: 0, a: 1}
   colorFrost: {r: 0.45, g: 0.81, b: 1, a: 1}
-  colorElectric: {r: 1, g: 0.9, b: 0, a: 1}
+  colorElectric: {r: 1, g: 0.96372116, b: 0, a: 1}
   colorWind: {r: 0.66, g: 1, b: 0.82, a: 1}
   colorArcane: {r: 0.78, g: 0.49, b: 1, a: 1}
   colorPoison: {r: 0.5, g: 1, b: 0, a: 1}

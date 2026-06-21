@@ -283,7 +283,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff1a383d390b32844811e89058a8686f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FireTagIndicator
-  fireVfxPrefab: {fileID: 0}
+  fireVfxPrefab: {fileID: 7009600383531409129, guid: 6d7914005a8083747a42266c86b62cc7, type: 3}
   spawnOffset: {x: 0, y: 0.5, z: 0}
 --- !u!114 &-6892782284464582352
 MonoBehaviour:
@@ -308,7 +308,7 @@ MonoBehaviour:
   arcaneIgniteTicks: 4
   arcaneIgniteDuration: 3
   arcaneIgniteTickDamage: 4
-  burningVfxPrefab: {fileID: 0}
+  burningVfxPrefab: {fileID: 1379199155223456419, guid: e8929e297e2875a4ebfd9b931f7a148a, type: 3}
   venomBurstDamagePerPoisonStack: 10
   thunderstrikeDamage: 18
   thunderstrikeChainRange: 5
