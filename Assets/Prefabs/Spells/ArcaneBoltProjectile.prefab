@@ -159,10 +159,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08d51c25781e0714b9d1aa572731d0f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcaneBoltProjectile
-  damage: 12
-  speed: 18
-  lifetime: 8
-  impactVfxPrefab: {fileID: 0}
+  impactVfxPrefab: {fileID: 2779230980678777332, guid: 2f5e3ff0957c22c4ba55cf3b1334e0ab, type: 3}
   hitLayers:
     serializedVersion: 2
     m_Bits: 64

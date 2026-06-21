@@ -611,9 +611,14 @@ MonoBehaviour:
   markedVfxPrefab: {fileID: 0}
   spawnOffset: {x: 0, y: 1, z: 0}
   outlineEnabled: 1
-  outlineColor: {r: 1, g: 0.6, b: 0, a: 1}
-  outlineWidth: 5
+  markedColor: {r: 1, g: 0.6, b: 0, a: 1}
+  markedWidth: 5
   seenThroughWalls: 1
+  exposedColor: {r: 1, g: 0.1, b: 0.1, a: 1}
+  exposedWidth: 8
+  exposedPulse: 1
+  pulseSpeed: 3
+  pulseMinWidth: 3
 --- !u!114 &3111638205161840381
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -647,16 +652,23 @@ MonoBehaviour:
   shatterStunDuration: 1.5
   blizzardRadius: 4
   blizzardDuration: 3
-  arcaneIgniteDamage: 15
+  arcaneIgniteBurstDamage: 12
+  arcaneIgniteTicks: 4
+  arcaneIgniteDuration: 3
+  arcaneIgniteTickDamage: 4
+  burningVfxPrefab: {fileID: 0}
   venomBurstDamagePerPoisonStack: 10
   thunderstrikeDamage: 18
   thunderstrikeChainRange: 5
+  lightningEffectPrefab: {fileID: 4867871391207819812, guid: 325138a74ce5e5c42b1c5cc074c41e8c, type: 3}
+  chainedElectricDuration: 3
   shockBleedDamagePerBleedStack: 8
   cauterizeDamage: 22
   exposedDuration: 5
   exposedDamageMultiplier: 2
   toxicFumesDuration: 4
   toxicFumesRadius: 3
+  toxicFumeCloudPrefab: {fileID: 5962257648108359157, guid: 787842ffc7fff484286e4150e2ec069d, type: 3}
   enemyLayerMask:
     serializedVersion: 2
     m_Bits: 64
