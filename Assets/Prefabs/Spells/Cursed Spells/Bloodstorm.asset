@@ -19,6 +19,8 @@ MonoBehaviour:
   cooldown: 0.5
   baseDamage: 5
   fullChargedDamage: 25
+  spellTag: 7
+  tagDuration: 3
   projectilePrefab: {fileID: 5191586487524325867, guid: 5bed134a33848da4982c131dbf27e888, type: 3}
   baseSpeed: 14
   fullChargedSpeed: 22

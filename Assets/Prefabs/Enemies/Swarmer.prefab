@@ -24,6 +24,9 @@ GameObject:
   - component: {fileID: -5069804677228373791}
   - component: {fileID: 2567567953994836065}
   - component: {fileID: -1812133689773230309}
+  - component: {fileID: 5359202046889970102}
+  - component: {fileID: 1890923097216572720}
+  - component: {fileID: -5425328182272475332}
   m_Layer: 6
   m_Name: Swarmer
   m_TagString: Untagged
@@ -154,17 +157,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc37917615d6769438aa5fc0f4f4c37e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SwarmerAI
-  player: {fileID: 0}
-  playerHealth: {fileID: 0}
-  enemyRenderer: {fileID: 0}
+  detectionRange: 12
+  loseTargetRange: 18
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  attackRange: 1.5
+  attackDamage: 10
+  attackCooldown: 1.5
+  knockbackForce: 3
+  stunRecoveryDelay: 0.2
   chaseSpeed: 4
   orbitSpeed: 3
   orbitDistance: 2
+  hoverHeight: 1.6
   diveSpeed: 8
-  diveDamage: 10
-  minAttackCooldown: 3
-  maxAttackCooldown: 5
   telegraphDuration: 0.6
+  enemyRenderer: {fileID: 0}
 --- !u!114 &5668792174707776190
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -364,6 +373,43 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FireTagHandler
   tickDamage: 2
   tickInterval: 1
+--- !u!114 &5359202046889970102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4069515727537450685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c862b16e0376efe4383203371307bc3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WindTagHandler
+  knockbackMultiplier: 2.5
+--- !u!114 &1890923097216572720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4069515727537450685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 155b6808a48f5ad4abc8dfd3c883ebd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ElectricTagHandler
+--- !u!114 &-5425328182272475332
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4069515727537450685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a79dec018312814a9f0afed5b0aee44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PoisonTagHandler
 --- !u!1 &4350451257439855457
 GameObject:
   m_ObjectHideFlags: 0

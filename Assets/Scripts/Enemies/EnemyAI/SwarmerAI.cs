@@ -2,34 +2,27 @@ using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof(Health))]
-public class SwarmerAI : MonoBehaviour
+public class SwarmerAI : EnemyBase
 {
-    private enum SwarmState
-    {
-        Chase,
-        Orbit,
-        Telegraph,
-        Dive
-    }
+    private enum SwarmState { Chase, Orbit, Telegraph, Dive }
 
-    [Header("References")]
-    public Transform player;
-    public PlayerHealth playerHealth;
-    public MeshRenderer enemyRenderer;
-
-    [Header("Movement")]
+    [Header("Swarmer — Movement")]
     [SerializeField] private float chaseSpeed = 3f;
     [SerializeField] private float orbitSpeed = 2f;
     [SerializeField] private float orbitDistance = 1.2f;
 
-    [Header("Attack (Dive)")]
-    [SerializeField] private float diveSpeed = 8f;
-    [SerializeField] private float diveDamage = 10f;
-    [SerializeField] private float minAttackCooldown = 3f;
-    [SerializeField] private float maxAttackCooldown = 5f;
-    [SerializeField] private float telegraphDuration = 0.6f;
+    [Header("Swarmer — Height")]
+    [SerializeField] private float hoverHeight = 1.6f;
 
-    private SwarmState currentState = SwarmState.Chase;
+    [Header("Swarmer — Dive Attack")]
+    [SerializeField] private float diveSpeed = 8f;
+    [SerializeField] private float telegraphDuration = 0.7f;
+
+    [Header("Swarmer — Visual")]
+    [SerializeField] private MeshRenderer enemyRenderer;
+
+    private SwarmState swarmState = SwarmState.Chase;
+
     private float lastAttackTime;
     private float currentCooldown;
 
@@ -37,90 +30,88 @@ public class SwarmerAI : MonoBehaviour
     private int orbitDirection = 1;
 
     private static float globalLastAttackTime = -999f;
-    private static float globalAttackSpacing = 1.5f;
+    private static float globalAttackSpacing = 2.5f;
 
     private Vector3 diveTargetPosition;
     private Material originalMaterial;
 
-    private void Start()
+    protected override void Start()
     {
-        if (player == null && Camera.main != null) player = Camera.main.transform;
-        if (playerHealth == null && player != null) playerHealth = player.GetComponentInParent<PlayerHealth>();
+        base.Start();
 
-        if (enemyRenderer != null) originalMaterial = enemyRenderer.material;
+        if (enemyRenderer != null)
+            originalMaterial = enemyRenderer.material;
 
         orbitDirection = Random.value > 0.5f ? 1 : -1;
         orbitAngle = Random.Range(0f, 360f);
 
-        currentCooldown = Random.Range(minAttackCooldown, maxAttackCooldown);
+        currentCooldown = Random.Range(attackCooldown, attackCooldown * 2f);
         lastAttackTime = Time.time + Random.Range(0f, 2f);
+        swarmState = SwarmState.Chase;
     }
 
-    private void Update()
+    protected override void UpdateState()
     {
         if (player == null) return;
 
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        float dist = DistanceToPlayer();
 
-        switch (currentState)
+        switch (swarmState)
         {
-            case SwarmState.Chase:
-                HandleChase(distanceToPlayer);
-                break;
-            case SwarmState.Orbit:
-                HandleOrbit(distanceToPlayer);
-                break;
-            case SwarmState.Telegraph:
-                break;
-            case SwarmState.Dive:
-                HandleDive(distanceToPlayer);
-                break;
+            case SwarmState.Chase:     HandleChase(dist); break;
+            case SwarmState.Orbit:     HandleOrbit(dist); break;
+            case SwarmState.Telegraph: break;
+            case SwarmState.Dive:      HandleDive();      break;
         }
 
-        if (currentState != SwarmState.Dive)
-        {
-            LookAtPlayer();
-        }
+        if (swarmState != SwarmState.Dive)
+            FacePlayer();
     }
 
-    private void HandleChase(float distance)
+    private Vector3 GetHoverTarget()
     {
-        if (distance <= orbitDistance)
+        return new Vector3(player.position.x, player.position.y + hoverHeight, player.position.z);
+    }
+
+    private void HandleChase(float dist)
+    {
+        if (dist <= orbitDistance)
         {
-            currentState = SwarmState.Orbit;
+            swarmState = SwarmState.Orbit;
             return;
         }
 
-        transform.position = Vector3.MoveTowards(transform.position, player.position, chaseSpeed * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(
+            transform.position, GetHoverTarget(), chaseSpeed * Time.deltaTime);
     }
 
-    private void HandleOrbit(float distance)
+    private void HandleOrbit(float dist)
     {
-        if (distance > orbitDistance * 2f)
+        if (dist > orbitDistance * 2f)
         {
-            currentState = SwarmState.Chase;
+            swarmState = SwarmState.Chase;
             return;
         }
 
         orbitAngle += orbitSpeed * orbitDirection * Time.deltaTime;
+        float hover = Mathf.Sin(Time.time * 3f) * 0.2f;
+        Vector3 offset = new Vector3(
+            Mathf.Sin(orbitAngle), hover, Mathf.Cos(orbitAngle)) * orbitDistance;
 
-        float hoverOffset = Mathf.Sin(Time.time * 3f) * 0.4f;
-        Vector3 orbitOffset = new Vector3(Mathf.Sin(orbitAngle), hoverOffset, Mathf.Cos(orbitAngle)) * orbitDistance;
-        Vector3 targetPos = player.position + orbitOffset;
+        transform.position = Vector3.Lerp(
+            transform.position, GetHoverTarget() + offset, Time.deltaTime * 5f);
 
-        transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 5f);
+        bool cooldownReady = Time.time >= lastAttackTime + currentCooldown;
+        bool globalReady   = Time.time >= globalLastAttackTime + globalAttackSpacing;
 
-        if (Time.time >= lastAttackTime + currentCooldown && Time.time >= globalLastAttackTime + globalAttackSpacing)
+        if (cooldownReady && globalReady)
         {
-            Vector3 directionToEnemy = (transform.position - player.position).normalized;
-            directionToEnemy.y = 0f;
+            Vector3 dirToSwarmer = (transform.position - player.position).normalized;
+            dirToSwarmer.y = 0f;
+            Vector3 playerFwd = player.forward;
+            playerFwd.y = 0f;
 
-            Vector3 playerForward = player.forward;
-            playerForward.y = 0f;
-
-            float angle = Vector3.Angle(playerForward, directionToEnemy);
-
-            if (angle <= 45f)
+            if (Vector3.Angle(playerFwd, dirToSwarmer) <= 30f)
             {
                 globalLastAttackTime = Time.time;
                 StartCoroutine(TelegraphAndDive());
@@ -138,45 +129,49 @@ public class SwarmerAI : MonoBehaviour
 
     private IEnumerator TelegraphAndDive()
     {
-        currentState = SwarmState.Telegraph;
+        swarmState = SwarmState.Telegraph;
 
         if (enemyRenderer != null)
             enemyRenderer.material.color = Color.red;
 
-        Vector3 pullbackPos = transform.position + (transform.position - player.position).normalized * 0.2f;
+        Vector3 pullback = transform.position +
+            (transform.position - player.position).normalized * 0.2f;
 
         float timer = 0f;
         while (timer < telegraphDuration)
         {
-            transform.position = Vector3.Lerp(transform.position, pullbackPos, Time.deltaTime * 5f);
+            transform.position = Vector3.Lerp(
+                transform.position, pullback, Time.deltaTime * 5f);
             timer += Time.deltaTime;
             yield return null;
         }
 
-        diveTargetPosition = player.position;
+        // Position einmalig einfrieren — kein Tracking während Dive
+        diveTargetPosition = GetHoverTarget();
 
         if (enemyRenderer != null)
             enemyRenderer.material = originalMaterial;
 
-        currentState = SwarmState.Dive;
+        swarmState = SwarmState.Dive;
     }
 
-    private void HandleDive(float distance)
+    private void HandleDive()
     {
-        transform.position = Vector3.MoveTowards(transform.position, diveTargetPosition, diveSpeed * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(
+            transform.position, diveTargetPosition, diveSpeed * Time.deltaTime);
 
-        if (Vector3.Distance(transform.position, player.position) < 0.5f)
+        // Beide Checks gegen Kopfhöhe — konsistent mit diveTargetPosition
+        if (Vector3.Distance(transform.position, GetHoverTarget()) < 0.5f)
         {
-            if (playerHealth != null)
-            {
-                playerHealth.TakeDamage((int)diveDamage, transform.forward);
-            }
-
+            PerformAttack();
+            Debug.Log($"[SwarmerAI] {gameObject.name} — Treffer!");
             ResetAfterDive();
+            return;
         }
-        else if (Vector3.Distance(transform.position, diveTargetPosition) < 0.1f)
+
+        if (Vector3.Distance(transform.position, diveTargetPosition) < 0.1f)
         {
-            Debug.Log("Spieler ist dem Swarmer ausgewichen!");
+            Debug.Log($"[SwarmerAI] {gameObject.name} — Spieler ausgewichen!");
             ResetAfterDive();
         }
     }
@@ -184,18 +179,27 @@ public class SwarmerAI : MonoBehaviour
     private void ResetAfterDive()
     {
         lastAttackTime = Time.time;
-        currentCooldown = Random.Range(minAttackCooldown, maxAttackCooldown);
+        currentCooldown = Random.Range(attackCooldown, attackCooldown * 2f);
         orbitDirection *= -1;
-        currentState = SwarmState.Orbit;
+        swarmState = SwarmState.Orbit;
     }
 
-    private void LookAtPlayer()
+    protected override void HandleDamaged(float damage, Vector3 direction)
     {
-        Vector3 direction = (player.position - transform.position).normalized;
-        if (direction != Vector3.zero)
+        if (swarmState == SwarmState.Telegraph)
         {
-            Quaternion lookRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 5f);
+            StopAllCoroutines();
+            if (enemyRenderer != null)
+                enemyRenderer.material = originalMaterial;
+            swarmState = SwarmState.Chase;
         }
+    }
+
+    protected override void OnDeath()
+    {
+        StopAllCoroutines();
+        if (enemyRenderer != null)
+            enemyRenderer.material = originalMaterial;
+        base.OnDeath();
     }
 }

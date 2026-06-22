@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -11,20 +12,29 @@ public class Health : MonoBehaviour
     [Tooltip("Schadensverstärkung wenn Gegner MARKED ist (z.B. 0.25 = +25%)")]
     [SerializeField] private float markedDamageAmp = 0.25f;
 
-    private float currentHealth;
-    private bool isDead;
+    // ── Events ────────────────────────────────────────────────
+    public event Action<float, Vector3> OnDamaged;
+    public event Action                 OnDeath;
 
-    private HitWobble hitWobble;
-    private HitReaction hitReaction;
-    private EnemyHealthBar healthBar;
-    private Collider[] allColliders;
+    // ── State ─────────────────────────────────────────────────
+    private float currentHealth;
+    private bool  isDead;
+
+    // ── Cached references ─────────────────────────────────────
+    private HitWobble        hitWobble;
+    private HitReaction      hitReaction;
+    private EnemyHealthBar   healthBar;
+    private Collider[]       allColliders;
     private SimpleEnemyChase simpleEnemyChase;
-    private SwarmerAI swarmerAI;
-    private TagHandler tagHandler;
+    private SwarmerAI        swarmerAI;
+    private EnemyBase        enemyBase;
+    private TagHandler       tagHandler;
 
     public float CurrentHealth => currentHealth;
-    public float MaxHealth => maxHealth;
-    public bool IsDead => isDead;
+    public float MaxHealth     => maxHealth;
+    public bool  IsDead        => isDead;
+
+    // ── Lifecycle ─────────────────────────────────────────────
 
     private void Awake()
     {
@@ -35,9 +45,12 @@ public class Health : MonoBehaviour
         allColliders     = GetComponentsInChildren<Collider>();
         simpleEnemyChase = GetComponent<SimpleEnemyChase>();
         swarmerAI        = GetComponent<SwarmerAI>();
+        enemyBase        = GetComponent<EnemyBase>();
         tagHandler       = GetComponent<TagHandler>();
         UpdateHealthBar();
     }
+
+    // ── Public API ────────────────────────────────────────────
 
     public void TakeDamage(float amount, Vector3 hitDirection)
         => TakeDamageInternal(amount, hitDirection, TagType.NONE, false, false);
@@ -48,13 +61,14 @@ public class Health : MonoBehaviour
     public void TakeDamageReaction(float amount, Vector3 hitDirection, bool isExposed = false)
         => TakeDamageInternal(amount, hitDirection, TagType.NONE, true, isExposed);
 
+    // ── Core ──────────────────────────────────────────────────
+
     private void TakeDamageInternal(float amount, Vector3 hitDirection,
-                                     TagType tag, bool isReaction, bool isExposed)
+        TagType tag, bool isReaction, bool isExposed)
     {
         if (isDead) return;
 
-        // MARKED Passiv: +markedDamageAmp% auf jeden Schaden
-        // Ausnahme: Exposed hat eigenen Multiplier — kein doppeltes Stapeln
+        // MARKED Passiv
         bool isMarked = !isExposed && tagHandler != null && tagHandler.HasTag(TagType.MARKED);
         if (isMarked)
             amount *= (1f + markedDamageAmp);
@@ -62,18 +76,77 @@ public class Health : MonoBehaviour
         currentHealth = Mathf.Max(currentHealth - amount, 0f);
 
         SpawnDamageNumber(amount, tag, isReaction, isExposed);
-
-        if (hitWobble != null)        hitWobble.PlayWobble(hitDirection);
-        if (hitReaction != null)      hitReaction.PlayReaction(hitDirection);
-        if (simpleEnemyChase != null) simpleEnemyChase.NotifyHit();
-
         UpdateHealthBar();
 
-        Debug.Log($"{gameObject.name} took {amount:F1} | HP:{currentHealth:F1} | tag:{tag} reaction:{isReaction} exposed:{isExposed} marked:{isMarked}");
+        Debug.Log($"{gameObject.name} took {amount:F1} | HP:{currentHealth:F1} | tag:{tag} " +
+                  $"reaction:{isReaction} exposed:{isExposed} marked:{isMarked}");
+
+        // ── Feedback Priorität ────────────────────────────────
+        // 1. EnemyBase (GruntMeleeAI, SwarmerAI etc.) — verwaltet
+        //    seinen eigenen Agent + visuals, hat Vorrang
+        // 2. SimpleEnemyChase — legacy, kein EnemyBase
+        // 3. HitWobble / HitReaction — nur wenn kein AI-Script vorhanden
+        if (enemyBase != null)
+        {
+            OnDamaged?.Invoke(amount, hitDirection); // Event für EnemyBase.HandleDamaged
+            enemyBase.NotifyDamaged(amount, hitDirection); // direkter Fallback (doppelt-sicher)
+        }
+        else if (simpleEnemyChase != null)
+        {
+            simpleEnemyChase.NotifyHit();
+        }
+        else
+        {
+            if (hitWobble   != null) hitWobble.PlayWobble(hitDirection);
+            if (hitReaction != null) hitReaction.PlayReaction(hitDirection);
+        }
 
         if (currentHealth <= 0f)
             StartDeath(hitDirection);
     }
+
+    // ── Death ─────────────────────────────────────────────────
+
+    private void StartDeath(Vector3 hitDirection)
+    {
+        if (isDead) return;
+        isDead = true;
+
+        OnDeath?.Invoke(); // Event für EnemyBase.HandleDeath
+
+        if (hitWobble        != null) hitWobble.ResetToRestPose();
+        foreach (Collider col in allColliders) col.enabled = false;
+        if (healthBarRoot    != null) healthBarRoot.SetActive(false);
+        if (simpleEnemyChase != null) simpleEnemyChase.enabled = false;
+        if (swarmerAI        != null) swarmerAI.enabled        = false;
+        // EnemyBase.HandleDeath() deaktiviert sich selbst via Event
+
+        StartCoroutine(DeathRoutine(hitDirection));
+    }
+
+    private IEnumerator DeathRoutine(Vector3 hitDirection)
+    {
+        Debug.Log($"{gameObject.name} died.");
+        Vector3 originalScale = transform.localScale;
+        Vector3 deathScale    = new Vector3(
+            originalScale.x * 0.85f,
+            originalScale.y * 0.6f,
+            originalScale.z * 0.85f);
+
+        float elapsed = 0f;
+        while (elapsed < deathDelay)
+        {
+            elapsed += Time.deltaTime;
+            transform.localScale = Vector3.Lerp(originalScale, deathScale, elapsed / deathDelay);
+            yield return null;
+        }
+
+        WeaponThrowAssist[] stuck = GetComponentsInChildren<WeaponThrowAssist>();
+        foreach (var w in stuck) w.ForceUnstick();
+        Destroy(gameObject);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────
 
     private void SpawnDamageNumber(float amount, TagType tag, bool isReaction, bool isExposed)
     {
@@ -91,39 +164,5 @@ public class Health : MonoBehaviour
     {
         if (healthBar != null)
             healthBar.SetNormalized(currentHealth / maxHealth);
-    }
-
-    private void StartDeath(Vector3 hitDirection)
-    {
-        if (isDead) return;
-        isDead = true;
-
-        if (hitWobble != null) hitWobble.ResetToRestPose();
-        foreach (Collider col in allColliders) col.enabled = false;
-        if (healthBarRoot != null) healthBarRoot.SetActive(false);
-        if (simpleEnemyChase != null) simpleEnemyChase.enabled = false;
-        if (swarmerAI != null)        swarmerAI.enabled = false;
-
-        StartCoroutine(DeathRoutine(hitDirection));
-    }
-
-    private IEnumerator DeathRoutine(Vector3 hitDirection)
-    {
-        Debug.Log($"{gameObject.name} died.");
-        Vector3 originalScale = transform.localScale;
-        Vector3 deathScale    = new Vector3(originalScale.x * 0.85f,
-                                            originalScale.y * 0.6f,
-                                            originalScale.z * 0.85f);
-        float elapsed = 0f;
-        while (elapsed < deathDelay)
-        {
-            elapsed += Time.deltaTime;
-            transform.localScale = Vector3.Lerp(originalScale, deathScale, elapsed / deathDelay);
-            yield return null;
-        }
-
-        WeaponThrowAssist[] stuck = GetComponentsInChildren<WeaponThrowAssist>();
-        foreach (var w in stuck) w.ForceUnstick();
-        Destroy(gameObject);
     }
 }
