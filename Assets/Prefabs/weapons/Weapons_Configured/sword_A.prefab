@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 8299774104837661}
   - component: {fileID: 1905941886984204098}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: Hit Collider
-  m_TagString: Untagged
+  m_TagString: Sword
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -30,7 +30,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8912678314833517420}
+  - {fileID: 8947373247365244887}
   m_Father: {fileID: 1887494369031067538}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &1905941886984204098
@@ -63,9 +63,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8172430604955660952}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: HitPoint_4
-  m_TagString: Untagged
+  m_TagString: Sword
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -94,9 +94,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 394847484632917325}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: HitPoint_2
-  m_TagString: Untagged
+  m_TagString: Sword
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -125,7 +125,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5054360293262304379}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SocketAttachPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -156,9 +156,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3579938335083814791}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: HitPoint_3
-  m_TagString: Untagged
+  m_TagString: Sword
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -200,7 +200,7 @@ GameObject:
   - component: {fileID: 3866978691933145277}
   m_Layer: 0
   m_Name: sword_A
-  m_TagString: Untagged
+  m_TagString: Sword
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -354,10 +354,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponSwingDetector
   trackedWeaponTransform: {fileID: 1887494369031067538}
   weaponSweepDamage: {fileID: 440298627880839078}
+  weaponThrowAssist: {fileID: 543103295907372220}
   swingSpeedThreshold: 1.75
   resetSpeedThreshold: 1.7
-  minTimeBetweenSwings: 0.5
-  minSwingDuration: 0.2
+  minTimeBetweenSwings: 0.6
+  minSwingDuration: 0.15
 --- !u!114 &440298627880839078
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -390,7 +391,9 @@ MonoBehaviour:
     m_Bits: 64
   damage: 20
   chargedDamageMultiplier: 2
-  exposedMultiplier: 2
+  throwBaseDamage: 25
+  throwChargedMultiplier: 2.5
+  minThrowDamageVelocity: 1
   attackWindowActive: 0
   isFlying: 0
 --- !u!114 &651238876653322362
@@ -569,7 +572,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponThrowAssist
   currentThrowStyle: 0
-  chargeSystem: {fileID: 0}
+  chargeSystem: {fileID: 3866978691933145277}
   chargedThrowSpeedMultiplier: 3
   flightDirectionRef: {fileID: 7271394034984242361}
   throwSpeedMultiplier: 1.3
@@ -579,9 +582,13 @@ MonoBehaviour:
   chaoticAlignmentForce: 50
   stickableLayers:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 256
   minVelocityToStick: 3
   penetrationDepth: 0.2
+  flightCastRadius: 0.65
+  flightHitLayers:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!114 &3866978691933145277
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -595,7 +602,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponChargeSystem
   timeToCharge: 1.5
-  chargedEffectObject: {fileID: 9036831071926268475, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+  chargedEffectObject: {fileID: 7773766037127629109}
   onChargeStarted:
     m_PersistentCalls:
       m_Calls: []
@@ -618,7 +625,7 @@ GameObject:
   m_Component:
   - component: {fileID: 288812585991942955}
   - component: {fileID: 5874687725120637999}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: Sword Audio Source
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -746,9 +753,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3143920830525110728}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: HitPoint_6
-  m_TagString: Untagged
+  m_TagString: Sword
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -808,9 +815,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4778396078357525472}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: HitPoint_1
-  m_TagString: Untagged
+  m_TagString: Sword
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -839,9 +846,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3528842120047655632}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: HitPoint_5
-  m_TagString: Untagged
+  m_TagString: Sword
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -870,9 +877,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3141409112044212851}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: HitPoint_7
-  m_TagString: Untagged
+  m_TagString: Sword
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -901,7 +908,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5234301847726656579}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: AttachPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -932,7 +939,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1911620541258180147}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: HitPoint_7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -963,7 +970,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7749140849048248567}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: HitPoint_8
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -994,7 +1001,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1412385498592514937}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: HitPoint_6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1016,7 +1023,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1887494369031067538}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &1230599637038974901
+--- !u!1001 &1623744465776524046
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -1042,7 +1049,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.27059808
+      value: -0.27059805
       objectReference: {fileID: 0}
     - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
       propertyPath: m_LocalRotation.y
@@ -1050,15 +1057,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.27059808
+      value: 0.27059805
       objectReference: {fileID: 0}
     - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: -90
+      value: -45
       objectReference: {fileID: 0}
     - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -1068,13 +1075,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: ChargeVfx
       objectReference: {fileID: 0}
+    - target: {fileID: 9036831071926268475, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9036831071926268475, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
---- !u!4 &8912678314833517420 stripped
+--- !u!1 &7773766037127629109 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9036831071926268475, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
+  m_PrefabInstance: {fileID: 1623744465776524046}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8947373247365244887 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7684203561392299225, guid: 3c1924269a1d5b6409b00960746ea016, type: 3}
-  m_PrefabInstance: {fileID: 1230599637038974901}
+  m_PrefabInstance: {fileID: 1623744465776524046}
   m_PrefabAsset: {fileID: 0}
