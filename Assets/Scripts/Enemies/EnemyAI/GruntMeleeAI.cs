@@ -12,8 +12,8 @@ public class GruntMeleeAI : EnemyBase
     [SerializeField] private Transform visualModel;
 
     [Header("Grunt — Movement")]
-    [SerializeField] private float chaseSpeed = 3.5f;
-    [SerializeField] private float stopDistance = 1.6f;
+    [SerializeField] private float chaseSpeed    = 3.5f;
+    [SerializeField] private float stopDistance  = 1.6f;
 
     [Header("Grunt — Attack")]
     [SerializeField] private float telegraphDuration = 0.6f;
@@ -29,45 +29,42 @@ public class GruntMeleeAI : EnemyBase
 
     [Header("Grunt — Hit Feedback")]
     [SerializeField] private float hitPauseDuration = 0.15f;
-    // Squish: wird automatisch von hitPauseDuration abgeleitet
-    // X/Z werden breiter, Y flacht ab, dann zurück zu (1,1,1)
-    private static readonly Vector3 HitSquishScale   = new Vector3(1.25f, 0.72f, 1.25f);
-    private static readonly Vector3 HitRecoverScale  = new Vector3(0.88f, 1.18f, 0.88f);
+    private static readonly Vector3 HitSquishScale  = new Vector3(1.25f, 0.72f, 1.25f);
+    private static readonly Vector3 HitRecoverScale = new Vector3(0.88f, 1.18f, 0.88f);
 
     [Header("Grunt — Material Flash (optional)")]
     [SerializeField] private Renderer[] flashRenderers;
-    [SerializeField] private Color      flashColor = new Color(1f, 0.25f, 0.1f, 1f);
+    [SerializeField] private Color      flashColor    = new Color(1f, 0.25f, 0.1f, 1f);
     [SerializeField] private float      flashDuration = 0.06f;
     private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
-    // ── State ─────────────────────────────────────────────
-    private GruntState gruntState  = GruntState.Chase;
-    private bool       isHitPaused = false;
-    private bool       isAttacking = false;
+    // ── State ─────────────────────────────────────────────────
+    private GruntState gruntState     = GruntState.Chase;
+    private bool       isHitPaused    = false;
+    private bool       isAttacking    = false;
     private Coroutine  hitPauseRoutine;
     private Coroutine  attackRoutine;
 
-    // ── Lifecycle ─────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────
 
     protected override void Start()
     {
         base.Start();
-        agent.speed           = chaseSpeed;
+        agent.speed            = chaseSpeed;
         agent.stoppingDistance = stopDistance;
-        attackCooldownTimer   = Random.Range(attackCooldownMin * 0.5f, attackCooldownMin);
-        gruntState            = GruntState.Chase;
+        attackCooldownTimer    = Random.Range(attackCooldownMin * 0.5f, attackCooldownMin);
+        gruntState             = GruntState.Chase;
 
-        // Material Flash vorbereiten (Emission muss im Material aktiviert sein)
         foreach (var r in flashRenderers)
             foreach (var mat in r.materials)
                 mat.EnableKeyword("_EMISSION");
     }
 
-    // ── EnemyBase overrides ───────────────────────────────
+    // ── EnemyBase overrides ───────────────────────────────────
 
     protected override void UpdateState()
     {
-        if (player == null || isHitPaused) return;
+        if (player == null) return;
 
         float dist = Vector3.Distance(transform.position, player.position);
 
@@ -75,6 +72,13 @@ public class GruntMeleeAI : EnemyBase
         {
             if (agent.hasPath) agent.ResetPath();
             FaceTargetSlerp();
+            return;
+        }
+
+        // Hit-Pause blockiert nur Bewegung — Angriff läuft weiter
+        if (isHitPaused)
+        {
+            if (agent.hasPath) agent.ResetPath();
             return;
         }
 
@@ -104,17 +108,28 @@ public class GruntMeleeAI : EnemyBase
 
     protected override void OnDeath()
     {
+        // Alle Coroutines stoppen — inkl. AttackSequence
         StopAllCoroutines();
+
+        // Visual sofort resetten
         ResetVisual();
-        if (agent.enabled && agent.isOnNavMesh)
+
+        // Agent einfrieren — Warp auf aktuelle Position verhindert NavMesh-Teleport
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
         {
-            agent.isStopped = true;
+            agent.isStopped      = true;
+            agent.updatePosition = false;
+            agent.updateRotation = false;
             agent.ResetPath();
+            agent.Warp(transform.position);
+            agent.enabled        = false;
         }
-        base.OnDeath();
+
+        // KEIN base.OnDeath() — Health.DeathRoutine übernimmt Destroy
+        Debug.Log($"[GruntMeleeAI] {gameObject.name} OnDeath an Position {transform.position}");
     }
 
-    // ── Movement ──────────────────────────────────────────
+    // ── Movement ──────────────────────────────────────────────
 
     private void FaceTargetSlerp()
     {
@@ -127,12 +142,12 @@ public class GruntMeleeAI : EnemyBase
             Time.deltaTime * 6f);
     }
 
-    // ── Attack Sequence ───────────────────────────────────
+    // ── Attack Sequence ───────────────────────────────────────
 
     private IEnumerator AttackSequence()
     {
-        isAttacking   = true;
-        gruntState    = GruntState.Telegraph;
+        isAttacking = true;
+        gruntState  = GruntState.Telegraph;
 
         StopAgent();
 
@@ -140,7 +155,7 @@ public class GruntMeleeAI : EnemyBase
         Quaternion tiltForward = Quaternion.Euler(15f, 0f, 0f);
         Quaternion neutral     = Quaternion.identity;
 
-        // -- Telegraph: nach hinten tilten
+        // -- Telegraph
         float timer = 0f;
         while (timer < telegraphDuration)
         {
@@ -151,7 +166,7 @@ public class GruntMeleeAI : EnemyBase
             yield return null;
         }
 
-        // -- Attack: nach vorne schnappen
+        // -- Attack
         gruntState       = GruntState.Attack;
         bool damageDealt = false;
 
@@ -196,8 +211,8 @@ public class GruntMeleeAI : EnemyBase
 
     private void ApplyHit()
     {
-        Vector3 center = transform.position + transform.forward * 1.0f + Vector3.up * 1.0f;
-        Collider[] hits = Physics.OverlapSphere(
+        Vector3    center = transform.position + transform.forward * 1.0f + Vector3.up * 1.0f;
+        Collider[] hits   = Physics.OverlapSphere(
             center, attackRadius, playerLayer, QueryTriggerInteraction.Collide);
 
         foreach (Collider col in hits)
@@ -211,41 +226,31 @@ public class GruntMeleeAI : EnemyBase
         }
     }
 
-    // ── Hit Pause + Feedback ──────────────────────────────
+    // ── Hit Pause + Feedback ──────────────────────────────────
 
     private IEnumerator HitPauseRoutine()
     {
         isHitPaused = true;
 
-        // Laufenden Angriff abbrechen
-        if (attackRoutine != null)
-        {
-            StopCoroutine(attackRoutine);
-            attackRoutine = null;
-        }
-        isAttacking = false;
-
-        StopAgent();
-        ResetVisual(); // Rotation sofort neutral
-
-        // Phase 1: Squish-Einschlag
-        if (visualModel != null) visualModel.localScale = HitSquishScale;
+        // Angriff läuft weiter — nur Bewegung stoppen
+        if (!isAttacking)
+            StopAgent();
 
         // Material-Flash parallel
         if (flashRenderers.Length > 0)
             StartCoroutine(MaterialFlash());
 
+        // Phase 1: Squish
+        if (visualModel != null) visualModel.localScale = HitSquishScale;
         yield return new WaitForSeconds(hitPauseDuration * 0.35f);
 
-        // Phase 2: Über-Bounce (Y streckt sich)
+        // Phase 2: Bounce
         if (visualModel != null) visualModel.localScale = HitRecoverScale;
-
         yield return new WaitForSeconds(hitPauseDuration * 0.35f);
 
-        // Phase 3: Zurück zu neutral (Lerp)
+        // Phase 3: Lerp zurück
         float elapsed   = 0f;
         float remaining = hitPauseDuration * 0.30f;
-
         while (elapsed < remaining)
         {
             if (visualModel != null)
@@ -255,18 +260,22 @@ public class GruntMeleeAI : EnemyBase
             yield return null;
         }
 
-        ResetVisual();
-        ResumeAgent();
+        // Nur Scale resetten — Rotation läuft weiter wenn Angriff aktiv
+        if (visualModel != null) visualModel.localScale = Vector3.one;
 
-        attackCooldownTimer = attackCooldownMin * 0.5f;
-        isHitPaused         = false;
-        hitPauseRoutine     = null;
-        gruntState          = GruntState.Chase;
+        if (!isAttacking)
+        {
+            ResumeAgent();
+            attackCooldownTimer = attackCooldownMin * 0.5f;
+            gruntState          = GruntState.Chase;
+        }
+
+        isHitPaused     = false;
+        hitPauseRoutine = null;
     }
 
     private IEnumerator MaterialFlash()
     {
-        Color black = Color.black;
         foreach (var r in flashRenderers)
             foreach (var mat in r.materials)
                 mat.SetColor(EmissionColorId, flashColor);
@@ -275,27 +284,27 @@ public class GruntMeleeAI : EnemyBase
 
         foreach (var r in flashRenderers)
             foreach (var mat in r.materials)
-                mat.SetColor(EmissionColorId, black);
+                mat.SetColor(EmissionColorId, Color.black);
     }
 
-    // ── Helpers ───────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────
 
     private void StopAgent()
     {
         if (!agent.enabled || !agent.isOnNavMesh) return;
         agent.ResetPath();
-        agent.isStopped       = true;
-        agent.updatePosition  = false;
-        agent.updateRotation  = false;
+        agent.isStopped      = true;
+        agent.updatePosition = false;
+        agent.updateRotation = false;
     }
 
     private void ResumeAgent()
     {
         if (!agent.enabled || !agent.isOnNavMesh) return;
-        agent.Warp(transform.position); // resync nach Hit-Pause
-        agent.updatePosition  = true;
-        agent.updateRotation  = true;
-        agent.isStopped       = false;
+        agent.Warp(transform.position);
+        agent.updatePosition = true;
+        agent.updateRotation = true;
+        agent.isStopped      = false;
     }
 
     private void ResetVisual()
@@ -305,7 +314,7 @@ public class GruntMeleeAI : EnemyBase
         visualModel.localScale    = Vector3.one;
     }
 
-    // ── Gizmos ────────────────────────────────────────────
+    // ── Gizmos ────────────────────────────────────────────────
 
     protected override void OnDrawGizmosSelected()
     {

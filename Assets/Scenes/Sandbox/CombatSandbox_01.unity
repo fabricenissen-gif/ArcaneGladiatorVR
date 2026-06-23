@@ -2662,9 +2662,25 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1714172531387370676, guid: f68a0aa4a237c134b86e5c790365d585, type: 3}
+      propertyPath: tiltAngle
+      value: 65
+      objectReference: {fileID: 0}
+    - target: {fileID: 1714172531387370676, guid: f68a0aa4a237c134b86e5c790365d585, type: 3}
+      propertyPath: attackRange
+      value: 1.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1714172531387370676, guid: f68a0aa4a237c134b86e5c790365d585, type: 3}
       propertyPath: visualModel
       value: 
       objectReference: {fileID: 1389476613}
+    - target: {fileID: 1714172531387370676, guid: f68a0aa4a237c134b86e5c790365d585, type: 3}
+      propertyPath: attackRadius
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1714172531387370676, guid: f68a0aa4a237c134b86e5c790365d585, type: 3}
+      propertyPath: stopDistance
+      value: 1.3
+      objectReference: {fileID: 0}
     - target: {fileID: 3953975481819406448, guid: f68a0aa4a237c134b86e5c790365d585, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -2878,7 +2894,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 440298627880839078, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
       propertyPath: minThrowDamageVelocity
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 543103295907372220, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
       propertyPath: chargeSystem
@@ -2886,7 +2902,7 @@ PrefabInstance:
       objectReference: {fileID: 883255250}
     - target: {fileID: 543103295907372220, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
       propertyPath: flightCastRadius
-      value: 0.55
+      value: 0.65
       objectReference: {fileID: 0}
     - target: {fileID: 543103295907372220, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
       propertyPath: flightHitLayers.m_Bits

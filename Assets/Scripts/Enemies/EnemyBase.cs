@@ -22,12 +22,12 @@ public abstract class EnemyBase : MonoBehaviour
     protected Health       health;
     protected Transform    player;
 
-    protected EnemyState currentState      = EnemyState.Idle;
+    protected EnemyState currentState       = EnemyState.Idle;
     protected float      attackCooldownTimer = 0f;
-    protected bool       isStunned         = false;
-    protected bool       isDead            = false;
+    protected bool       isStunned          = false;
+    protected bool       isDead             = false;
 
-    // ── Lifecycle ────────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────
 
     protected virtual void Awake()
     {
@@ -123,16 +123,8 @@ public abstract class EnemyBase : MonoBehaviour
 
     // ── Schaden & Tod ─────────────────────────────────────────
 
-    /// <summary>
-    /// Wird von Health.cs via Event aufgerufen — ODER direkt via NotifyDamaged()
-    /// falls Health noch keine Events hat.
-    /// </summary>
     protected virtual void HandleDamaged(float damage, Vector3 direction) { }
 
-    /// <summary>
-    /// Public wrapper — wird von Health.cs aufgerufen wenn kein Event vorhanden.
-    /// Nie direkt aus SubKlassen aufrufen.
-    /// </summary>
     public void NotifyDamaged(float damage, Vector3 direction)
     {
         if (isDead) return;
@@ -141,19 +133,30 @@ public abstract class EnemyBase : MonoBehaviour
 
     protected virtual void HandleDeath()
     {
+        if (isDead) return;
         isDead = true;
-        if (agent != null && agent.enabled)
+
+        StopAllCoroutines();
+
+        // Agent sofort auf aktuelle Position warpen und deaktivieren
+        // — verhindert NavMesh-Warp zurück zum letzten Sample-Punkt
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
         {
             agent.isStopped = true;
-            agent.enabled   = false;
+            agent.ResetPath();
+            agent.Warp(transform.position); // Position einfrieren
+            agent.enabled = false;
         }
+
         EnterState(EnemyState.Dead);
         OnDeath();
     }
 
     protected virtual void OnDeath()
     {
-        Destroy(gameObject, 1.5f);
+        // Kein Destroy hier — Health.DeathRoutine übernimmt das
+        // Subklassen können hier Effekte, Sounds, Loot spawnen etc.
+        Debug.Log($"[{gameObject.name}] OnDeath — Health.DeathRoutine übernimmt Destroy.");
     }
 
     // ── Stun ──────────────────────────────────────────────────

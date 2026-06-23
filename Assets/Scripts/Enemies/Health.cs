@@ -12,15 +12,12 @@ public class Health : MonoBehaviour
     [Tooltip("Schadensverstärkung wenn Gegner MARKED ist (z.B. 0.25 = +25%)")]
     [SerializeField] private float markedDamageAmp = 0.25f;
 
-    // ── Events ────────────────────────────────────────────────
     public event Action<float, Vector3> OnDamaged;
     public event Action                 OnDeath;
 
-    // ── State ─────────────────────────────────────────────────
     private float currentHealth;
     private bool  isDead;
 
-    // ── Cached references ─────────────────────────────────────
     private HitWobble        hitWobble;
     private HitReaction      hitReaction;
     private EnemyHealthBar   healthBar;
@@ -108,21 +105,25 @@ public class Health : MonoBehaviour
 
         OnDeath?.Invoke();
 
+        // Position einfrieren bevor DeathRoutine animiert
+        Vector3 deathPosition = transform.position;
+
         if (hitWobble        != null) hitWobble.ResetToRestPose();
         foreach (Collider col in allColliders) col.enabled = false;
         if (healthBarRoot    != null) healthBarRoot.SetActive(false);
         if (simpleEnemyChase != null) simpleEnemyChase.enabled = false;
         if (swarmerAI        != null) swarmerAI.enabled        = false;
 
-        // Schwert SOFORT unstick bevor DeathRoutine die Scale ändert
         WeaponThrowAssist[] stuck = GetComponentsInChildren<WeaponThrowAssist>();
         foreach (var w in stuck) w.ForceUnstick();
 
-        StartCoroutine(DeathRoutine(hitDirection));
+        StartCoroutine(DeathRoutine(hitDirection, deathPosition));
     }
 
-    private IEnumerator DeathRoutine(Vector3 hitDirection)
+    private IEnumerator DeathRoutine(Vector3 hitDirection, Vector3 deathPosition)
     {
+        transform.position = deathPosition;
+
         Debug.Log($"{gameObject.name} died.");
         Vector3 originalScale = transform.localScale;
         Vector3 deathScale    = new Vector3(
@@ -133,7 +134,8 @@ public class Health : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < deathDelay)
         {
-            elapsed += Time.deltaTime;
+            transform.position   = deathPosition; // Position jeden Frame einfrieren
+            elapsed             += Time.deltaTime;
             transform.localScale = Vector3.Lerp(originalScale, deathScale, elapsed / deathDelay);
             yield return null;
         }
