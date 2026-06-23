@@ -5,11 +5,6 @@ using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
-/// <summary>
-/// Charge-Zustand einer XR-Waffe via Trigger-Hold.
-/// SetEffectActive() steuert ParticleSystems korrekt über Play/Stop
-/// statt SetActive — das war der Root-Cause des "VFX geht nicht mehr"-Bugs.
-/// </summary>
 [RequireComponent(typeof(XRGrabInteractable))]
 public class WeaponChargeSystem : MonoBehaviour
 {
@@ -26,45 +21,56 @@ public class WeaponChargeSystem : MonoBehaviour
         public float    finalDamage;
 
         public ChargedHitData(Health h, Collider c, Vector3 dir, Vector3 pt, float bd, float fd)
-        { health = h; hitCollider = c; hitDirection = dir; hitPoint = pt; baseDamage = bd; finalDamage = fd; }
+        {
+            health       = h;
+            hitCollider  = c;
+            hitDirection = dir;
+            hitPoint     = pt;
+            baseDamage   = bd;
+            finalDamage  = fd;
+        }
     }
 
     [Header("Charge Settings")]
     [SerializeField] private float timeToCharge = 1.5f;
 
-    [Header("VFX")]
-    [Tooltip("GameObject mit optionalem ParticleSystem — wird über Play/Stop gesteuert, nicht SetActive")]
+    [Header("Feedback (Optional)")]
     [SerializeField] private GameObject chargedEffectObject;
 
-    [Header("Events")]
+    [Header("Inspector Events")]
     public UnityEvent              onChargeStarted;
     public UnityEvent              onCharged;
     public UnityEvent              onChargeConsumed;
     public ChargedHitUnityEvent    onChargedHit;
 
-    public event Action               ChargeStarted;
-    public event Action               Charged;
-    public event Action               ChargeConsumed;
-    public event Action<ChargedHitData> ChargedHit;
-
-    public bool  IsCharged      { get; private set; }
-    public float ChargeProgress => Mathf.Clamp01(chargeTimer / Mathf.Max(timeToCharge, 0.0001f));
-
-    private XRGrabInteractable    grabInteractable;
-    private XRBaseInputInteractor currentInteractor;
+    private XRGrabInteractable     grabInteractable;
+    private XRBaseInputInteractor  currentInteractor;
+    private WeaponThrowAssist      throwAssist;
 
     private bool  isHoldingTrigger;
     private bool  chargeStarted;
-    private float chargeTimer;
+    private float currentChargeTimer;
 
-    // ─────────────────────────────────────────
-    // Lifecycle
-    // ─────────────────────────────────────────
+    public bool  IsCharged     { get; private set; }
+    public float ChargeProgress => Mathf.Clamp01(currentChargeTimer / Mathf.Max(timeToCharge, 0.0001f));
+
+    public event Action              ChargeStarted;
+    public event Action              Charged;
+    public event Action              ChargeConsumed;
+    public event Action<ChargedHitData> ChargedHit;
+
+    // ── Lifecycle ─────────────────────────────────────────────
 
     private void Awake()
     {
         grabInteractable = GetComponent<XRGrabInteractable>();
-        HardReset();
+        throwAssist      = GetComponent<WeaponThrowAssist>();
+
+        IsCharged          = false;
+        isHoldingTrigger   = false;
+        chargeStarted      = false;
+        currentChargeTimer = 0f;
+        SetEffectActive(false);
     }
 
     private void OnEnable()
@@ -73,7 +79,7 @@ public class WeaponChargeSystem : MonoBehaviour
         grabInteractable.selectExited.AddListener(OnReleased);
         grabInteractable.activated.AddListener(OnActivatePressed);
         grabInteractable.deactivated.AddListener(OnActivateReleased);
-        HardReset();
+        ResetState();
     }
 
     private void OnDisable()
@@ -82,30 +88,24 @@ public class WeaponChargeSystem : MonoBehaviour
         grabInteractable.selectExited.RemoveListener(OnReleased);
         grabInteractable.activated.RemoveListener(OnActivatePressed);
         grabInteractable.deactivated.RemoveListener(OnActivateReleased);
-        HardReset();
+        ResetState();
     }
 
-    private void Update()
+    private void ResetState()
     {
-        if (!isHoldingTrigger || IsCharged) return;
-
-        chargeTimer += Time.deltaTime;
-
-        if (currentInteractor != null && Time.frameCount % 5 == 0)
-            currentInteractor.SendHapticImpulse(ChargeProgress * 0.3f, 0.05f);
-
-        if (chargeTimer >= timeToCharge)
-            FullyCharge();
+        IsCharged          = false;
+        isHoldingTrigger   = false;
+        chargeStarted      = false;
+        currentChargeTimer = 0f;
+        SetEffectActive(false);
     }
 
-    // ─────────────────────────────────────────
-    // XR Events
-    // ─────────────────────────────────────────
+    // ── XR Events ─────────────────────────────────────────────
 
     private void OnGrabbed(SelectEnterEventArgs args)
     {
-        if (args.interactorObject is XRBaseInputInteractor inp)
-            currentInteractor = inp;
+        if (args.interactorObject is XRBaseInputInteractor interactor)
+            currentInteractor = interactor;
     }
 
     private void OnReleased(SelectExitEventArgs args)
@@ -115,16 +115,29 @@ public class WeaponChargeSystem : MonoBehaviour
         currentInteractor = null;
 
         if (args.interactorObject is XRSocketInteractor)
-            ExpendCharge();  // Socket → Charge konsumieren
-        else
-            HardReset();     // Loslassen → alles zurücksetzen
+        {
+            ExpendCharge();
+            return;
+        }
+
+        // Wenn Charge aktiv UND ein Throw stattfindet → Charge NICHT resetten
+        // WeaponThrowAssist.OnReleased liest IsCharged und ruft danach ExpendCharge selbst
+        bool throwHappening = throwAssist != null && IsCharged;
+        if (throwHappening)
+        {
+            Debug.Log("[WeaponChargeSystem] Loslassen mit Charge — Throw erwartet, kein Reset.");
+            // Effekt aus aber IsCharged bleibt true bis ExpendCharge von ThrowAssist kommt
+            SetEffectActive(false);
+            return;
+        }
+
+        ResetState();
     }
 
     private void OnActivatePressed(ActivateEventArgs args)
     {
         if (IsCharged) return;
         isHoldingTrigger = true;
-
         if (!chargeStarted)
         {
             chargeStarted = true;
@@ -136,43 +149,61 @@ public class WeaponChargeSystem : MonoBehaviour
     private void OnActivateReleased(DeactivateEventArgs args)
     {
         if (IsCharged) return;
-        isHoldingTrigger = false;
-        chargeStarted    = false;
-        chargeTimer      = 0f;
+        isHoldingTrigger   = false;
+        chargeStarted      = false;
+        currentChargeTimer = 0f;
     }
 
-    // ─────────────────────────────────────────
-    // Charge State
-    // ─────────────────────────────────────────
+    // ── Update ────────────────────────────────────────────────
+
+    private void Update()
+    {
+        if (!isHoldingTrigger || IsCharged) return;
+
+        currentChargeTimer += Time.deltaTime;
+
+        if (currentInteractor != null && Time.frameCount % 5 == 0)
+            currentInteractor.SendHapticImpulse(ChargeProgress * 0.3f, 0.05f);
+
+        if (currentChargeTimer >= timeToCharge)
+            FullyCharge();
+    }
+
+    // ── Charge Logic ──────────────────────────────────────────
 
     private void FullyCharge()
     {
-        IsCharged        = true;
-        isHoldingTrigger = false;
-        chargeStarted    = false;
-        chargeTimer      = timeToCharge;
+        IsCharged          = true;
+        isHoldingTrigger   = false;
+        chargeStarted      = false;
+        currentChargeTimer = timeToCharge;
 
         SetEffectActive(true);
-        currentInteractor?.SendHapticImpulse(1f, 0.2f);
+
+        if (currentInteractor != null)
+            currentInteractor.SendHapticImpulse(1f, 0.2f);
 
         onCharged?.Invoke();
         Charged?.Invoke();
-        Debug.Log($"[WeaponChargeSystem] {gameObject.name} FULLY CHARGED");
+
+        Debug.Log("[WeaponChargeSystem] Fully charged!");
     }
 
     public void ExpendCharge()
     {
         if (!IsCharged) return;
 
-        IsCharged        = false;
-        isHoldingTrigger = false;
-        chargeStarted    = false;
-        chargeTimer      = 0f;
+        IsCharged          = false;
+        isHoldingTrigger   = false;
+        chargeStarted      = false;
+        currentChargeTimer = 0f;
 
         SetEffectActive(false);
+
         onChargeConsumed?.Invoke();
         ChargeConsumed?.Invoke();
-        Debug.Log($"[WeaponChargeSystem] {gameObject.name} charge EXPENDED");
+
+        Debug.Log("[WeaponChargeSystem] Charge expended.");
     }
 
     public void NotifyChargedHit(Health h, Collider c, Vector3 dir, Vector3 pt, float bd, float fd)
@@ -182,21 +213,8 @@ public class WeaponChargeSystem : MonoBehaviour
         ChargedHit?.Invoke(data);
     }
 
-    // ─────────────────────────────────────────
-    // Helper
-    // ─────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────
 
-    private void HardReset()
-    {
-        IsCharged        = false;
-        isHoldingTrigger = false;
-        chargeStarted    = false;
-        chargeTimer      = 0f;
-        SetEffectActive(false);
-    }
-
-    /// ParticleSystem korrekt über Play/Stop steuern — SetActive allein
-    /// reicht nicht da PlayOnAwake den Effekt beim nächsten Activate neu startet.
     private void SetEffectActive(bool active)
     {
         if (chargedEffectObject == null) return;
@@ -204,16 +222,9 @@ public class WeaponChargeSystem : MonoBehaviour
         ParticleSystem ps = chargedEffectObject.GetComponent<ParticleSystem>();
         if (ps != null)
         {
-            if (active)
-            {
-                chargedEffectObject.SetActive(true);
-                ps.Play();
-            }
-            else
-            {
-                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                chargedEffectObject.SetActive(false);
-            }
+            if (active) { chargedEffectObject.SetActive(true); ps.Play(); }
+            else        { ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                          chargedEffectObject.SetActive(false); }
         }
         else
         {

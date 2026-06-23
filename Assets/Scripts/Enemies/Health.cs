@@ -68,7 +68,6 @@ public class Health : MonoBehaviour
     {
         if (isDead) return;
 
-        // MARKED Passiv
         bool isMarked = !isExposed && tagHandler != null && tagHandler.HasTag(TagType.MARKED);
         if (isMarked)
             amount *= (1f + markedDamageAmp);
@@ -81,15 +80,10 @@ public class Health : MonoBehaviour
         Debug.Log($"{gameObject.name} took {amount:F1} | HP:{currentHealth:F1} | tag:{tag} " +
                   $"reaction:{isReaction} exposed:{isExposed} marked:{isMarked}");
 
-        // ── Feedback Priorität ────────────────────────────────
-        // 1. EnemyBase (GruntMeleeAI, SwarmerAI etc.) — verwaltet
-        //    seinen eigenen Agent + visuals, hat Vorrang
-        // 2. SimpleEnemyChase — legacy, kein EnemyBase
-        // 3. HitWobble / HitReaction — nur wenn kein AI-Script vorhanden
         if (enemyBase != null)
         {
-            OnDamaged?.Invoke(amount, hitDirection); // Event für EnemyBase.HandleDamaged
-            enemyBase.NotifyDamaged(amount, hitDirection); // direkter Fallback (doppelt-sicher)
+            OnDamaged?.Invoke(amount, hitDirection);
+            enemyBase.NotifyDamaged(amount, hitDirection);
         }
         else if (simpleEnemyChase != null)
         {
@@ -112,14 +106,17 @@ public class Health : MonoBehaviour
         if (isDead) return;
         isDead = true;
 
-        OnDeath?.Invoke(); // Event für EnemyBase.HandleDeath
+        OnDeath?.Invoke();
 
         if (hitWobble        != null) hitWobble.ResetToRestPose();
         foreach (Collider col in allColliders) col.enabled = false;
         if (healthBarRoot    != null) healthBarRoot.SetActive(false);
         if (simpleEnemyChase != null) simpleEnemyChase.enabled = false;
         if (swarmerAI        != null) swarmerAI.enabled        = false;
-        // EnemyBase.HandleDeath() deaktiviert sich selbst via Event
+
+        // Schwert SOFORT unstick bevor DeathRoutine die Scale ändert
+        WeaponThrowAssist[] stuck = GetComponentsInChildren<WeaponThrowAssist>();
+        foreach (var w in stuck) w.ForceUnstick();
 
         StartCoroutine(DeathRoutine(hitDirection));
     }
@@ -141,8 +138,6 @@ public class Health : MonoBehaviour
             yield return null;
         }
 
-        WeaponThrowAssist[] stuck = GetComponentsInChildren<WeaponThrowAssist>();
-        foreach (var w in stuck) w.ForceUnstick();
         Destroy(gameObject);
     }
 

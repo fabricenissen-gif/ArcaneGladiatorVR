@@ -132,7 +132,7 @@ GameObject:
   - component: {fileID: 63501587}
   - component: {fileID: 63501586}
   - component: {fileID: 63501585}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Ground (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -719,7 +719,7 @@ GameObject:
   - component: {fileID: 647936417}
   - component: {fileID: 647936416}
   - component: {fileID: 647936415}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Wall 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -830,6 +830,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ad34abafad169848a38072baa96cdb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit::UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable
+--- !u!114 &883255250 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3866978691933145277, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+  m_PrefabInstance: {fileID: 8066264095919459782}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93225fca7e7db874ab010ac6723c3bd4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponChargeSystem
+--- !u!114 &883255251 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 543103295907372220, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+  m_PrefabInstance: {fileID: 8066264095919459782}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95d620d316adafd4b8479e33e38c45bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponThrowAssist
 --- !u!1 &1077910131
 GameObject:
   m_ObjectHideFlags: 0
@@ -971,7 +993,7 @@ GameObject:
   - component: {fileID: 1096555603}
   - component: {fileID: 1096555602}
   - component: {fileID: 1096555601}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Pillar 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1375,7 +1397,7 @@ GameObject:
   - component: {fileID: 1690130935}
   - component: {fileID: 1690130934}
   - component: {fileID: 1690130933}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Wall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1637,7 +1659,7 @@ GameObject:
   - component: {fileID: 1740721133}
   - component: {fileID: 1740721132}
   - component: {fileID: 1740721131}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Pillar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1964,7 +1986,7 @@ GameObject:
   - component: {fileID: 1858866234}
   - component: {fileID: 1858866233}
   - component: {fileID: 1858866237}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Ground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2643,6 +2665,10 @@ PrefabInstance:
       propertyPath: visualModel
       value: 
       objectReference: {fileID: 1389476613}
+    - target: {fileID: 3953975481819406448, guid: f68a0aa4a237c134b86e5c790365d585, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5131621777507957784, guid: f68a0aa4a237c134b86e5c790365d585, type: 3}
       propertyPath: m_LocalPosition.x
       value: 2.95276
@@ -2687,8 +2713,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: GruntMelee
       objectReference: {fileID: 0}
+    - target: {fileID: 7884325539447674747, guid: f68a0aa4a237c134b86e5c790365d585, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8673462064307520804, guid: f68a0aa4a237c134b86e5c790365d585, type: 3}
       propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8894565048044055691, guid: f68a0aa4a237c134b86e5c790365d585, type: 3}
+      propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -2842,6 +2876,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 440298627880839078, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: minThrowDamageVelocity
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 543103295907372220, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: chargeSystem
+      value: 
+      objectReference: {fileID: 883255250}
+    - target: {fileID: 543103295907372220, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: flightCastRadius
+      value: 0.55
+      objectReference: {fileID: 0}
+    - target: {fileID: 543103295907372220, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: flightHitLayers.m_Bits
+      value: 64
+      objectReference: {fileID: 0}
+    - target: {fileID: 543103295907372220, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: stickableLayers.m_Bits
+      value: 256
+      objectReference: {fileID: 0}
     - target: {fileID: 651238876653322362, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
       propertyPath: hitVfxPrefab
       value: 
@@ -2921,6 +2975,18 @@ PrefabInstance:
     - target: {fileID: 5234301847726656579, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0.132
+      objectReference: {fileID: 0}
+    - target: {fileID: 7476107347644088628, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: minSwingDuration
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 7476107347644088628, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: weaponThrowAssist
+      value: 
+      objectReference: {fileID: 883255251}
+    - target: {fileID: 7476107347644088628, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: minTimeBetweenSwings
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 8099578433088712333, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
       propertyPath: backSocket
