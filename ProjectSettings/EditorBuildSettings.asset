@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/Hub/HubRoom.unity
+    guid: 6e8ad93a2e2896743a9fd3f8434f2ccd
+  - enabled: 1
+    path: Assets/Scenes/Sandbox/CombatSandbox_01.unity
+    guid: dd0c43ee07f858341857ad6c3e5d22d9
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
