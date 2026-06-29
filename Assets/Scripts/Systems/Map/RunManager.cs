@@ -1,153 +1,130 @@
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.Events;
 
 public class RunManager : MonoBehaviour
 {
     public static RunManager Instance { get; private set; }
 
     [Header("References")]
-    [SerializeField] private MapData      mapData;
     [SerializeField] private MapGenerator mapGenerator;
     [SerializeField] private MapUI        mapUI;
+    [SerializeField] private MapData      mapData;
 
-    [Header("Scene Names")]
-    [SerializeField] private string hubSceneName      = "HubRoom";
-    [SerializeField] private string combatSceneName   = "Arena_Combat";
-    [SerializeField] private string eliteSceneName    = "Arena_Elite";
-    [SerializeField] private string eventSceneName    = "Scene_Event";
-    [SerializeField] private string shopSceneName     = "Scene_Shop";
-    [SerializeField] private string forgeSceneName    = "Scene_Forge";
-    [SerializeField] private string mysterySceneName  = "Scene_Mystery";
-    [SerializeField] private string miniBossSceneName = "Arena_MiniBoss";
-    [SerializeField] private string bossSceneName     = "Arena_Boss";
+    public UnityEvent<NodeData> OnNodeSelected = new();
+    public UnityEvent<MapData>  OnMapUpdated   = new();
 
-    public NodeData ActiveNode   { get; private set; }
-    public int      CurrentFloor { get { return mapData != null ? mapData.currentFloor : 0; } }
-
-    private void OnEnable()
-    {
-        Debug.Log("[RunManager] OnEnable");
-    }
+    public NodeData CurrentNode  { get; private set; }
+    public int      CurrentFloor { get; private set; }
 
     private void Awake()
     {
-        Debug.Log("[RunManager] Awake");
-
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 
-    private void Start()
+    private void Start() => StartRun();
+
+    // ── Public API ────────────────────────────────────────────
+
+    public void StartRun()
     {
-        Debug.Log("[RunManager] Start | mapData null:" + (mapData == null) +
-                  " | nodes:" + (mapData != null ? mapData.nodes.Count : -1));
-
-        if (mapData == null)
-        {
-            Debug.LogError("[RunManager] Kein MapData zugewiesen!");
-            return;
-        }
-
-        StartNewRun();
-    }
-
-    public void StartNewRun()
-    {
-        if (mapGenerator == null)
-        {
-            Debug.LogError("[RunManager] Kein MapGenerator zugewiesen!");
-            return;
-        }
-
-        mapGenerator.GenerateFloor(0);
-
-        if (mapUI != null)
-            mapUI.RenderMap(mapData);
-        else
-            Debug.LogWarning("[RunManager] Kein MapUI zugewiesen.");
-
-        Debug.Log("[RunManager] Neuer Run gestartet.");
+        CurrentFloor = 0;
+        CurrentNode  = null;
+        GenerateAndShowFloor();
     }
 
     public void SelectNode(string nodeId)
     {
         NodeData node = mapData.GetNode(nodeId);
-
         if (node == null)
         {
-            Debug.LogWarning("[RunManager] Node nicht gefunden: " + nodeId);
+            Debug.LogWarning($"[RunManager] Node {nodeId} nicht gefunden.");
             return;
         }
-
-        if (!node.isAccessible || node.isLocked || node.isCompleted)
+        if (!node.isAccessible)
         {
-            Debug.LogWarning("[RunManager] Node nicht wählbar: " + nodeId);
+            Debug.LogWarning($"[RunManager] Node {nodeId} ist nicht erreichbar.");
+            return;
+        }
+        if (node.isLocked || node.isCompleted)
+        {
+            Debug.LogWarning($"[RunManager] Node {nodeId} gesperrt oder abgeschlossen.");
             return;
         }
 
-        ActiveNode           = node;
-        mapData.activeNodeId = nodeId;
+        if (CurrentNode != null)
+        {
+            CurrentNode.isCompleted  = true;
+            CurrentNode.isAccessible = false;
+        }
 
-        string scene = GetSceneForNodeType(node.type);
-        Debug.Log("[RunManager] Node gewählt: " + nodeId + " (" + node.type + ") -> Scene: " + scene);
-        SceneManager.LoadScene(scene);
+        CurrentNode       = node;
+        node.isAccessible = true;
+
+        LockSiblingNodes(node);
+        UnlockNextNodes(node);
+        MarkPastNodes(node.column);
+
+        Debug.Log($"[RunManager] ✔ Node gewählt: [{node.type}] Spalte {node.column} Row {node.row}");
+
+        OnNodeSelected.Invoke(node);
+        RefreshMap();
     }
 
     public void CompleteCurrentNode()
     {
-        if (ActiveNode == null)
-        {
-            Debug.LogWarning("[RunManager] CompleteCurrentNode: Kein aktiver Node.");
-            return;
-        }
+        if (CurrentNode == null) return;
+        CurrentNode.isCompleted = true;
+        Debug.Log($"[RunManager] Node abgeschlossen: [{CurrentNode.type}]");
+        RefreshMap();
+    }
 
-        ActiveNode.isCompleted = true;
+    // ── Interne Logik ─────────────────────────────────────────
 
-        foreach (string nextId in ActiveNode.nextNodeIds)
+    private void GenerateAndShowFloor()
+    {
+        mapGenerator.GenerateFloor(CurrentFloor);
+        RefreshMap();
+    }
+
+    private void RefreshMap()
+    {
+        OnMapUpdated.Invoke(mapData);
+        mapUI.RenderMap(mapData);
+    }
+
+    private void LockSiblingNodes(NodeData chosen)
+    {
+        foreach (var node in mapData.nodes)
         {
-            NodeData next = mapData.GetNode(nextId);
-            if (next != null)
+            if (node.nodeId == chosen.nodeId) continue;
+            if (node.column == chosen.column)
             {
-                next.isAccessible = true;
-                next.isLocked     = false;
+                node.isLocked     = true;
+                node.isAccessible = false;
             }
         }
-
-        Debug.Log("[RunManager] Node abgeschlossen: " + ActiveNode.nodeId);
-        SceneManager.LoadScene(hubSceneName);
     }
 
-    public void AdvanceToNextFloor()
+    private void UnlockNextNodes(NodeData current)
     {
-        int nextFloor = mapData.currentFloor + 1;
-        if (nextFloor > 2)
+        foreach (string nextId in current.nextNodeIds)
         {
-            Debug.Log("[RunManager] Run abgeschlossen!");
-            return;
+            NodeData next = mapData.GetNode(nextId);
+            if (next == null) continue;
+            next.isAccessible = true;
+            next.isLocked     = false;
         }
-        mapGenerator.GenerateFloor(nextFloor);
-        if (mapUI != null) mapUI.RenderMap(mapData);
-        SceneManager.LoadScene(hubSceneName);
     }
 
-    private string GetSceneForNodeType(NodeType type)
+    private void MarkPastNodes(int currentColumn)
     {
-        switch (type)
+        foreach (var node in mapData.nodes)
         {
-            case NodeType.Combat:   return combatSceneName;
-            case NodeType.Elite:    return eliteSceneName;
-            case NodeType.Event:    return eventSceneName;
-            case NodeType.Shop:     return shopSceneName;
-            case NodeType.Forge:    return forgeSceneName;
-            case NodeType.Mystery:  return mysterySceneName;
-            case NodeType.MiniBoss: return miniBossSceneName;
-            case NodeType.Boss:     return bossSceneName;
-            default:                return combatSceneName;
+            if (node.column >= currentColumn) continue;
+            node.isCompleted  = true;
+            node.isAccessible = false;
         }
     }
 }

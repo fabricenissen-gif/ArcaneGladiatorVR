@@ -1,0 +1,283 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6f448dbd90787d469bd0f20ab438163, type: 3}
+  m_Name: MapData_Floor1
+  m_EditorClassIdentifier: Assembly-CSharp::MapData
+  currentFloor: 1
+  activeNodeId: 
+  nodes:
+  - nodeId: n_0_0
+    type: 0
+    column: 0
+    row: 0
+    nextNodeIds:
+    - n_1_1
+    isCompleted: 0
+    isAccessible: 1
+    isLocked: 0
+  - nodeId: n_1_1
+    type: 2
+    column: 1
+    row: 1
+    nextNodeIds:
+    - n_2_0
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_0_1
+    type: 0
+    column: 0
+    row: 1
+    nextNodeIds:
+    - n_1_1
+    isCompleted: 0
+    isAccessible: 1
+    isLocked: 0
+  - nodeId: n_0_2
+    type: 0
+    column: 0
+    row: 2
+    nextNodeIds:
+    - n_1_1
+    isCompleted: 0
+    isAccessible: 1
+    isLocked: 0
+  - nodeId: n_0_3
+    type: 0
+    column: 0
+    row: 3
+    nextNodeIds:
+    - n_1_2
+    isCompleted: 0
+    isAccessible: 1
+    isLocked: 0
+  - nodeId: n_1_2
+    type: 5
+    column: 1
+    row: 2
+    nextNodeIds:
+    - n_2_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_2_0
+    type: 3
+    column: 2
+    row: 0
+    nextNodeIds:
+    - n_3_0
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_2_1
+    type: 3
+    column: 2
+    row: 1
+    nextNodeIds:
+    - n_3_0
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_3_0
+    type: 2
+    column: 3
+    row: 0
+    nextNodeIds:
+    - n_4_1
+    - n_4_0
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_4_1
+    type: 2
+    column: 4
+    row: 1
+    nextNodeIds:
+    - n_5_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_4_0
+    type: 2
+    column: 4
+    row: 0
+    nextNodeIds:
+    - n_5_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_5_1
+    type: 1
+    column: 5
+    row: 1
+    nextNodeIds:
+    - n_6_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_6_1
+    type: 5
+    column: 6
+    row: 1
+    nextNodeIds:
+    - n_7_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_7_1
+    type: 6
+    column: 7
+    row: 1
+    nextNodeIds:
+    - n_8_3
+    - n_8_0
+    - n_8_2
+    - n_8_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_8_3
+    type: 0
+    column: 8
+    row: 3
+    nextNodeIds:
+    - n_9_2
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_8_0
+    type: 0
+    column: 8
+    row: 0
+    nextNodeIds:
+    - n_9_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_8_2
+    type: 3
+    column: 8
+    row: 2
+    nextNodeIds:
+    - n_9_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_8_1
+    type: 0
+    column: 8
+    row: 1
+    nextNodeIds:
+    - n_9_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_9_1
+    type: 5
+    column: 9
+    row: 1
+    nextNodeIds:
+    - n_10_2
+    - n_10_0
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_9_2
+    type: 1
+    column: 9
+    row: 2
+    nextNodeIds:
+    - n_10_3
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_10_2
+    type: 4
+    column: 10
+    row: 2
+    nextNodeIds:
+    - n_11_2
+    - n_11_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_10_0
+    type: 4
+    column: 10
+    row: 0
+    nextNodeIds:
+    - n_11_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_10_3
+    type: 4
+    column: 10
+    row: 3
+    nextNodeIds:
+    - n_11_2
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_11_1
+    type: 2
+    column: 11
+    row: 1
+    nextNodeIds:
+    - n_12_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_11_2
+    type: 0
+    column: 11
+    row: 2
+    nextNodeIds:
+    - n_12_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_12_1
+    type: 0
+    column: 12
+    row: 1
+    nextNodeIds:
+    - n_13_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_13_1
+    type: 0
+    column: 13
+    row: 1
+    nextNodeIds:
+    - n_14_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_14_1
+    type: 0
+    column: 14
+    row: 1
+    nextNodeIds:
+    - n_15_1
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1
+  - nodeId: n_15_1
+    type: 7
+    column: 15
+    row: 1
+    nextNodeIds: []
+    isCompleted: 0
+    isAccessible: 0
+    isLocked: 1

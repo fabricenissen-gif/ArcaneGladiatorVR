@@ -16,17 +16,9 @@ public class MapUI : MonoBehaviour
     [SerializeField] private float columnSpacing = 100f;
     [SerializeField] private float rowSpacing    = 100f;
 
-    [Header("Node Colors")]
-    [SerializeField] private Color colorCombat   = new Color(0.85f, 0.25f, 0.25f);
-    [SerializeField] private Color colorElite    = new Color(0.9f,  0.5f,  0.1f);
-    [SerializeField] private Color colorEvent    = new Color(0.3f,  0.7f,  0.9f);
-    [SerializeField] private Color colorShop     = new Color(0.9f,  0.85f, 0.2f);
-    [SerializeField] private Color colorForge    = new Color(0.6f,  0.4f,  0.9f);
-    [SerializeField] private Color colorMystery  = new Color(0.5f,  0.5f,  0.5f);
-    [SerializeField] private Color colorMiniBoss = new Color(0.9f,  0.3f,  0.6f);
-    [SerializeField] private Color colorBoss     = new Color(0.7f,  0.1f,  0.1f);
-    [SerializeField] private Color colorLocked   = new Color(0.3f,  0.3f,  0.3f);
-    [SerializeField] private Color colorDone     = new Color(0.4f,  0.4f,  0.4f);
+    [Header("Line Colors")]
+    [SerializeField] private Color lineColorActive = new Color(1f,   1f,   1f,   0.5f);
+    [SerializeField] private Color lineColorDone   = new Color(0.6f, 0.6f, 0.6f, 0.9f);
 
     private RectTransform linesContainer;
     private RectTransform nodesContainer;
@@ -122,6 +114,17 @@ public class MapUI : MonoBehaviour
         // Nodes danach → vor Linien
         foreach (NodeData node in data.nodes)
             SpawnNode(node, nodePositions[node.nodeId]);
+
+        // XRMapInteractors informieren dass Map jetzt aktiv ist
+        foreach (var interactor in FindObjectsByType<XRMapInteractor>(FindObjectsSortMode.None))
+            interactor.SetMapVisible(true);
+    }
+
+    public void HideMap()
+    {
+        ClearMap();
+        foreach (var interactor in FindObjectsByType<XRMapInteractor>(FindObjectsSortMode.None))
+            interactor.SetMapVisible(false);
     }
 
     // ── AutoScale ─────────────────────────────────────────────
@@ -169,12 +172,22 @@ public class MapUI : MonoBehaviour
         rt.sizeDelta        = Vector2.one * nodeSize;
         rt.localScale       = Vector3.one;
 
-        var label = go.GetComponentInChildren<TextMeshProUGUI>();
-        if (label) label.text = GetNodeIcon(node.type);
+        // MapNodeButton übernimmt Farbe, Icon und Interaktion
+        var nodeBtn = go.GetComponent<MapNodeButton>();
+        if (nodeBtn != null)
+        {
+            nodeBtn.SetNode(node);
+        }
+        else
+        {
+            // Fallback
+            var img = go.GetComponent<Image>();
+            if (img) img.color = GetNodeColor(node);
+            var lbl = go.GetComponentInChildren<TextMeshProUGUI>();
+            if (lbl) lbl.text = GetNodeIcon(node.type);
+        }
 
-        var img = go.GetComponent<Image>();
-        if (img) img.color = GetNodeColor(node);
-
+        // Unity Button für Desktop-Fallback
         var btn = go.GetComponent<Button>();
         if (btn)
         {
@@ -211,9 +224,7 @@ public class MapUI : MonoBehaviour
 
         var img = go.GetComponent<Image>();
         if (img)
-            img.color = completed
-                ? new Color(0.6f, 0.6f, 0.6f, 0.9f)
-                : new Color(1f,   1f,   1f,   0.5f);
+            img.color = completed ? lineColorDone : lineColorActive;
     }
 
     // ── Cleanup ───────────────────────────────────────────────
@@ -224,39 +235,26 @@ public class MapUI : MonoBehaviour
         if (nodesContainer) foreach (Transform c in nodesContainer) Destroy(c.gameObject);
     }
 
-    // ── Helpers ───────────────────────────────────────────────
+    // ── Fallback Helpers (nur wenn kein MapNodeButton) ────────
 
     private Color GetNodeColor(NodeData node)
     {
-        if (node.isCompleted) return colorDone;
-        if (node.isLocked)    return colorLocked;
-        return node.type switch
-        {
-            NodeType.Combat   => colorCombat,
-            NodeType.Elite    => colorElite,
-            NodeType.Event    => colorEvent,
-            NodeType.Shop     => colorShop,
-            NodeType.Forge    => colorForge,
-            NodeType.Mystery  => colorMystery,
-            NodeType.MiniBoss => colorMiniBoss,
-            NodeType.Boss     => colorBoss,
-            _                 => colorMystery
-        };
+        if (node.isCompleted)  return new Color(0.4f, 0.4f, 0.4f);
+        if (node.isLocked)     return new Color(0.2f, 0.2f, 0.2f);
+        if (node.isAccessible) return new Color(1f,   0.85f, 0.3f);
+        return new Color(0.6f, 0.6f, 0.6f);
     }
 
-    private string GetNodeIcon(NodeType type)
+    private string GetNodeIcon(NodeType type) => type switch
     {
-        return type switch
-        {
-            NodeType.Combat   => "K",
-            NodeType.Elite    => "E",
-            NodeType.Event    => "?",
-            NodeType.Shop     => "$",
-            NodeType.Forge    => "S",
-            NodeType.Mystery  => "!",
-            NodeType.MiniBoss => "M",
-            NodeType.Boss     => "B",
-            _                 => "?"
-        };
-    }
+        NodeType.Combat   => "K",
+        NodeType.Elite    => "E",
+        NodeType.Event    => "?",
+        NodeType.Shop     => "$",
+        NodeType.Forge    => "S",
+        NodeType.Mystery  => "!",
+        NodeType.MiniBoss => "M",
+        NodeType.Boss     => "B",
+        _                 => "?"
+    };
 }
