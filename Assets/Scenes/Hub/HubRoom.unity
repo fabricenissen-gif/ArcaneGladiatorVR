@@ -716,8 +716,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapGenerator
   columnsPerFloor: 14
-  minRows: 3
-  maxRows: 4
+  rowCount: 4
+  pathCount: 6
   weightCombat: 45
   weightElite: 15
   weightEvent: 20
@@ -777,32 +777,16 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1223332404}
     - target: {fileID: 788920904280288271, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
-      propertyPath: m_SortingOrder
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 1134947674834683143, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
-      propertyPath: m_Layer
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1237788619173118148, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 50
-      objectReference: {fileID: 0}
-    - target: {fileID: 1237788619173118148, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: -50
-      objectReference: {fileID: 0}
-    - target: {fileID: 1577863537290305453, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
-      propertyPath: m_Layer
-      value: 5
+      propertyPath: m_RenderMode
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
       propertyPath: m_Pivot.x
-      value: 0
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
       propertyPath: m_Pivot.y
-      value: 1
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
       propertyPath: m_AnchorMax.x
@@ -826,7 +810,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 900
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.001
+      objectReference: {fileID: 0}
+    - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.001
+      objectReference: {fileID: 0}
+    - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.001
       objectReference: {fileID: 0}
     - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
       propertyPath: m_LocalPosition.x
@@ -838,7 +834,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.97
+      value: -0.77
       objectReference: {fileID: 0}
     - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
       propertyPath: m_LocalRotation.w
@@ -858,11 +854,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -0.507
+      value: -0.005
       objectReference: {fileID: 0}
     - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.454
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3359379780142490792, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -876,13 +872,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3933460969835263799, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
+      propertyPath: m_PresetInfoIsWorld
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6785982076425700563, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
+      propertyPath: mapPanel
+      value: 
+      objectReference: {fileID: 75867814091940773}
+    - target: {fileID: 6785982076425700563, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
+      propertyPath: nodeButtonPrefab
+      value: 
+      objectReference: {fileID: 5756036607951974084, guid: 763e179d3965b4f488f43e92b462de87, type: 3}
     - target: {fileID: 7305485442419573844, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
       propertyPath: m_Name
       value: Map
-      objectReference: {fileID: 0}
-    - target: {fileID: 7305485442419573844, guid: a70b1b9ea1e1def4ab697a1ce45f0489, type: 3}
-      propertyPath: m_Layer
-      value: 5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

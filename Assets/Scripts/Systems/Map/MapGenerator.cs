@@ -4,163 +4,274 @@ using UnityEngine;
 public class MapGenerator : MonoBehaviour
 {
     [Header("Map Shape")]
-    [SerializeField] private int   columnsPerFloor = 12;
-    [SerializeField] private int   minRows         = 2;
-    [SerializeField] private int   maxRows         = 4;
+    [SerializeField] private int columnsPerFloor = 12;
+    [SerializeField] private int rowCount        = 4;
+    [SerializeField] private int pathCount       = 6;
 
-    [Header("Node Type Weights — Normal Columns")]
-    [Range(0, 100)] [SerializeField] private int weightCombat  = 45;
-    [Range(0, 100)] [SerializeField] private int weightElite   = 15;
-    [Range(0, 100)] [SerializeField] private int weightEvent   = 20;
-    [Range(0, 100)] [SerializeField] private int weightShop    = 10;
-    [Range(0, 100)] [SerializeField] private int weightForge   = 5;
-    [Range(0, 100)] [SerializeField] private int weightMystery = 5;
+    [Header("Node Type Weights")]
+    [Range(0,100)] [SerializeField] private int weightCombat  = 45;
+    [Range(0,100)] [SerializeField] private int weightElite   = 15;
+    [Range(0,100)] [SerializeField] private int weightEvent   = 20;
+    [Range(0,100)] [SerializeField] private int weightShop    = 10;
+    [Range(0,100)] [SerializeField] private int weightForge   =  5;
+    [Range(0,100)] [SerializeField] private int weightMystery =  5;
 
     [Header("References")]
     [SerializeField] private MapData mapData;
 
-    // Shop/Forge garantiert pro Ebene
-    private const int GuaranteedShopColumn  = 4;
-    private const int GuaranteedForgeColumn = 8;
+    private int miniBossCol;
+    private int bossCol;
+    private int totalCols;
+    private int midRow;
+    private int guaranteedShopCol;
+    private int guaranteedForgeCol;
+
+    private List<int>[,] connections;
+
+    // Spalten in denen Pfade noch NICHT zusammenlaufen dürfen
+    // (gezählt ab 0 — also die ersten N Spalten sind "isoliert")
+    private const int IsolatedStartColumns = 2;
 
     public void GenerateFloor(int floor)
     {
-        if (mapData == null)
-        {
-            Debug.LogError("[MapGenerator] Kein MapData zugewiesen!");
-            return;
-        }
+        if (mapData == null) { Debug.LogError("[MapGenerator] Kein MapData!"); return; }
+        if (rowCount  < 2) rowCount  = 4;
+        if (pathCount < 1) pathCount = 6;
+        // Clamp: pathCount darf nie mehr als rowCount sein damit jeder Startpunkt einzigartig ist
+        pathCount = Mathf.Min(pathCount, rowCount);
 
         mapData.Reset();
         mapData.currentFloor = floor;
 
-        var grid = new Dictionary<int, List<NodeData>>(); // col → nodes
+        int halfNormal     = columnsPerFloor / 2;
+        miniBossCol        = halfNormal;
+        int postNormal     = columnsPerFloor - halfNormal;
+        bossCol            = miniBossCol + postNormal + 1;
+        totalCols          = bossCol + 1;
+        midRow             = (rowCount - 1) / 2;
+        guaranteedShopCol  = Mathf.Max(1, halfNormal / 3);
+        guaranteedForgeCol = miniBossCol + Mathf.Max(1, postNormal / 2);
 
-        // ── Spalten generieren ────────────────────────────────
+        connections = new List<int>[totalCols, rowCount];
+        for (int c = 0; c < totalCols; c++)
+            for (int r = 0; r < rowCount; r++)
+                connections[c, r] = new List<int>();
 
-        for (int col = 0; col < columnsPerFloor; col++)
+        GeneratePaths();
+        BuildNodes(floor);
+
+        foreach (var node in mapData.nodes)
+            if (node.column == 0) { node.isAccessible = true; node.isLocked = false; }
+
+        Debug.Log($"[MapGenerator] Ebene {floor+1} | {mapData.nodes.Count} Nodes | " +
+                  $"{pathCount} Pfade | {rowCount} Rows | " +
+                  $"MiniBoss@{miniBossCol} Boss@{bossCol}");
+    }
+
+    private void GeneratePaths()
+    {
+        int convSteps    = Mathf.CeilToInt((rowCount - 1) / 2f) + 1;
+        int convStartPre = miniBossCol - convSteps;
+        int convStartPost= bossCol - convSteps - 1;
+
+        // Strikt unique Startrows: jede Row genau einmal bei pathCount <= rowCount
+        var startRows = GetStrictUniqueStartRows(pathCount, rowCount);
+
+        for (int p = 0; p < pathCount; p++)
         {
-            int rowCount = Random.Range(minRows, maxRows + 1);
-            grid[col]    = new List<NodeData>();
+            int row = startRows[p];
 
+            // ── Erste Hälfte → MiniBoss ────────────────────────
+            for (int col = 0; col < miniBossCol; col++)
+            {
+                int nextRow;
+                if (col >= convStartPre)
+                    nextRow = MoveTowards(row, midRow, col);
+                else
+                    nextRow = PickNextRow(row, col, col < IsolatedStartColumns);
+                AddConnection(col, row, nextRow);
+                row = nextRow;
+            }
+            AddConnection(miniBossCol - 1, row, midRow);
+
+            // ── MiniBoss → Zweite Hälfte: wieder spreizen ──────
+            row = startRows[p]; // zurück zur ursprünglichen Startrow
+            AddConnection(miniBossCol, midRow, row);
+
+            // ── Zweite Hälfte → Boss ───────────────────────────
+            int postStart = miniBossCol + 1;
+            for (int col = postStart; col < bossCol; col++)
+            {
+                int nextRow;
+                if (col >= convStartPost)
+                    nextRow = MoveTowards(row, midRow, col);
+                else
+                {
+                    // Auch nach MiniBoss: erste N Spalten isoliert halten
+                    bool isolated = (col - postStart) < IsolatedStartColumns;
+                    nextRow = PickNextRow(row, col, isolated);
+                }
+                AddConnection(col, row, nextRow);
+                row = nextRow;
+            }
+            AddConnection(bossCol - 1, row, midRow);
+        }
+    }
+
+    /// <summary>
+    /// Wählt nächste Row.
+    /// isolated=true → Pfad MUSS sich bewegen (delta != 0) und darf NICHT auf eine bereits
+    /// belegte Row in der nächsten Spalte gehen. Das hält Pfade in den ersten Spalten auseinander.
+    /// </summary>
+    private int PickNextRow(int currentRow, int col, bool isolated)
+    {
+        var weighted = new List<int>();
+
+        // Welche Rows sind in col+1 bereits von anderen Pfaden belegt?
+        var occupiedNext = new HashSet<int>();
+        if (isolated)
+            for (int r = 0; r < rowCount; r++)
+                foreach (int t in connections[col, r])
+                    occupiedNext.Add(t);
+
+        for (int delta = -1; delta <= 1; delta++)
+        {
+            int r = currentRow + delta;
+            if (r < 0 || r >= rowCount) continue;
+            if (WouldCross(col, currentRow, r)) continue;
+
+            // Im isolierten Modus: keine Bewegung auf bereits belegte Rows
+            if (isolated && occupiedNext.Contains(r)) continue;
+            // Im isolierten Modus: gerade nur erlaubt wenn niemand sonst auf currentRow bleibt
+            if (isolated && delta == 0) continue;
+
+            if (delta == 0)
+            {
+                weighted.Add(r);
+            }
+            else
+            {
+                weighted.Add(r);
+                weighted.Add(r);
+                bool awayFromEdge = (currentRow == 0 && delta == 1) ||
+                                    (currentRow == rowCount - 1 && delta == -1);
+                if (awayFromEdge) weighted.Add(r);
+            }
+        }
+
+        // Fallback: wenn isoliert und nichts frei → normaler Schritt ohne Isolation
+        if (weighted.Count == 0)
+        {
+            for (int delta = -1; delta <= 1; delta++)
+            {
+                int r = currentRow + delta;
+                if (r < 0 || r >= rowCount) continue;
+                if (WouldCross(col, currentRow, r)) continue;
+                weighted.Add(r);
+            }
+        }
+
+        if (weighted.Count == 0) return currentRow;
+        return weighted[Random.Range(0, weighted.Count)];
+    }
+
+    private int MoveTowards(int currentRow, int targetRow, int col)
+    {
+        if (currentRow == targetRow) return currentRow;
+        int dir       = currentRow < targetRow ? 1 : -1;
+        int preferred = currentRow + dir;
+        if (preferred >= 0 && preferred < rowCount && !WouldCross(col, currentRow, preferred))
+            return preferred;
+        if (!WouldCross(col, currentRow, currentRow))
+            return currentRow;
+        int opp = currentRow - dir;
+        if (opp >= 0 && opp < rowCount && !WouldCross(col, currentRow, opp))
+            return opp;
+        return currentRow;
+    }
+
+    private List<int> GetStrictUniqueStartRows(int paths, int rows)
+    {
+        var available = new List<int>();
+        for (int r = 0; r < rows; r++) available.Add(r);
+        for (int i = available.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (available[i], available[j]) = (available[j], available[i]);
+        }
+        var result = new List<int>();
+        for (int p = 0; p < paths; p++)
+            result.Add(available[p % available.Count]);
+        return result;
+    }
+
+    private bool WouldCross(int col, int fromRow, int toRow)
+    {
+        for (int r = 0; r < rowCount; r++)
+            foreach (int t in connections[col, r])
+                if ((fromRow < r && toRow > t) || (fromRow > r && toRow < t))
+                    return true;
+        return false;
+    }
+
+    private void AddConnection(int col, int fromRow, int toRow)
+    {
+        if (col < 0 || col >= totalCols - 1) return;
+        fromRow = Mathf.Clamp(fromRow, 0, rowCount - 1);
+        toRow   = Mathf.Clamp(toRow,   0, rowCount - 1);
+        if (!connections[col, fromRow].Contains(toRow))
+            connections[col, fromRow].Add(toRow);
+    }
+
+    private void BuildNodes(int floor)
+    {
+        var used = new HashSet<string>();
+        for (int col = 0; col < totalCols - 1; col++)
+            for (int row = 0; row < rowCount; row++)
+                foreach (int nextRow in connections[col, row])
+                {
+                    used.Add($"{col}_{row}");
+                    used.Add($"{col + 1}_{nextRow}");
+                }
+
+        var grid = new Dictionary<string, NodeData>();
+        foreach (string key in used)
+        {
+            var p   = key.Split('_');
+            int col = int.Parse(p[0]);
+            int row = int.Parse(p[1]);
+            var nd  = new NodeData($"n_{col}_{row}", GetNodeType(col, floor), col, row);
+            grid[key] = nd;
+            mapData.nodes.Add(nd);
+        }
+
+        for (int col = 0; col < totalCols - 1; col++)
             for (int row = 0; row < rowCount; row++)
             {
-                NodeType type = GetNodeTypeForColumn(col, floor);
-                string   id   = $"n_{col}_{row}";
-                var      node = new NodeData(id, type, col, row);
-                grid[col].Add(node);
-                mapData.nodes.Add(node);
+                if (!grid.TryGetValue($"{col}_{row}", out var from)) continue;
+                foreach (int nextRow in connections[col, row])
+                    if (grid.TryGetValue($"{col + 1}_{nextRow}", out var to))
+                        if (!from.nextNodeIds.Contains(to.nodeId))
+                            from.nextNodeIds.Add(to.nodeId);
             }
-        }
-
-        // ── Mini-Boss Spalte (col = columnsPerFloor - 2) ──────
-        int miniBossCol = columnsPerFloor - 2;
-        grid[miniBossCol].Clear();
-        mapData.nodes.RemoveAll(n => n.column == miniBossCol);
-        var miniBossNode = new NodeData($"n_{miniBossCol}_0", NodeType.MiniBoss, miniBossCol, 0);
-        grid[miniBossCol].Add(miniBossNode);
-        mapData.nodes.Add(miniBossNode);
-
-        // ── Boss Spalte (col = columnsPerFloor - 1) ───────────
-        int bossCol = columnsPerFloor - 1;
-        grid[bossCol].Clear();
-        mapData.nodes.RemoveAll(n => n.column == bossCol);
-        var bossNode = new NodeData($"n_{bossCol}_0", NodeType.Boss, bossCol, 0);
-        grid[bossCol].Add(bossNode);
-        mapData.nodes.Add(bossNode);
-
-        // ── Verbindungen generieren ───────────────────────────
-        ConnectNodes(grid);
-
-        // ── Start-Node zugänglich machen ─────────────────────
-        foreach (var startNode in grid[0])
-        {
-            startNode.isAccessible = true;
-            startNode.isLocked     = false;
-        }
-
-        Debug.Log($"[MapGenerator] Ebene {floor + 1} generiert | " +
-                  $"{mapData.nodes.Count} Nodes | {columnsPerFloor} Spalten");
     }
 
-    private void ConnectNodes(Dictionary<int, List<NodeData>> grid)
+    private NodeType GetNodeType(int col, int floor)
     {
-        for (int col = 0; col < columnsPerFloor - 1; col++)
-        {
-            if (!grid.ContainsKey(col) || !grid.ContainsKey(col + 1)) continue;
+        if (col == miniBossCol)        return NodeType.MiniBoss;
+        if (col == bossCol)            return NodeType.Boss;
+        if (col == guaranteedShopCol)  return NodeType.Shop;
+        if (col == guaranteedForgeCol) return NodeType.Forge;
+        if (col == 0)                  return NodeType.Combat;
 
-            var currentCol = grid[col];
-            var nextCol    = grid[col + 1];
-
-            // Jeder Node verbindet sich mit 1-2 Nodes der nächsten Spalte
-            foreach (var node in currentCol)
-            {
-                // Nächstgelegenen Node immer verbinden
-                NodeData closest = GetClosestNode(node, nextCol);
-                if (closest != null && !node.nextNodeIds.Contains(closest.nodeId))
-                    node.nextNodeIds.Add(closest.nodeId);
-
-                // 40% Chance auf zweite Verbindung für Verzweigung
-                if (Random.value < 0.4f && nextCol.Count > 1)
-                {
-                    NodeData second = nextCol[Random.Range(0, nextCol.Count)];
-                    if (second != closest && !node.nextNodeIds.Contains(second.nodeId))
-                        node.nextNodeIds.Add(second.nodeId);
-                }
-            }
-
-            // Sicherstellen dass jeder Next-Node mindestens eine eingehende Verbindung hat
-            foreach (var nextNode in nextCol)
-            {
-                bool hasIncoming = false;
-                foreach (var node in currentCol)
-                    if (node.nextNodeIds.Contains(nextNode.nodeId))
-                    { hasIncoming = true; break; }
-
-                if (!hasIncoming)
-                {
-                    NodeData fallback = currentCol[Random.Range(0, currentCol.Count)];
-                    if (!fallback.nextNodeIds.Contains(nextNode.nodeId))
-                        fallback.nextNodeIds.Add(nextNode.nodeId);
-                }
-            }
-        }
-    }
-
-    private NodeData GetClosestNode(NodeData from, List<NodeData> candidates)
-    {
-        if (candidates.Count == 0) return null;
-        NodeData best     = candidates[0];
-        int      bestDiff = Mathf.Abs(from.row - best.row);
-        foreach (var c in candidates)
-        {
-            int diff = Mathf.Abs(from.row - c.row);
-            if (diff < bestDiff) { best = c; bestDiff = diff; }
-        }
-        return best;
-    }
-
-    private NodeType GetNodeTypeForColumn(int col, int floor)
-    {
-        // Garantierte Spalten
-        if (col == GuaranteedShopColumn)  return NodeType.Shop;
-        if (col == GuaranteedForgeColumn) return NodeType.Forge;
-
-        // Erste Spalte immer Kampf
-        if (col == 0) return NodeType.Combat;
-
-        // Gewichteter Zufalls-Pick
-        int total   = weightCombat + weightElite + weightEvent +
-                      weightShop  + weightForge  + weightMystery;
+        int total   = weightCombat + weightElite + weightEvent + weightShop + weightForge + weightMystery;
         int roll    = Random.Range(0, total);
         int running = 0;
-
         running += weightCombat;  if (roll < running) return NodeType.Combat;
         running += weightElite;   if (roll < running) return NodeType.Elite;
         running += weightEvent;   if (roll < running) return NodeType.Event;
         running += weightShop;    if (roll < running) return NodeType.Shop;
         running += weightForge;   if (roll < running) return NodeType.Forge;
-
         return NodeType.Mystery;
     }
 }
