@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -7,27 +8,39 @@ public class HandItemTracker : MonoBehaviour
 {
     public bool IsOccupied { get; private set; } = false;
 
-    private XRBaseInteractor xrInteractor;
+    private readonly List<XRBaseInteractor> xrInteractors = new();
 
     private void Awake()
     {
-        xrInteractor = GetComponent<XRBaseInteractor>();
-        if (xrInteractor == null)
-            Debug.LogWarning("[HandItemTracker] Kein XRBaseInteractor auf diesem GameObject gefunden!");
+        // Root trägt selbst evtl. keinen Interactor — Near-Far und Poke sitzen als Children.
+        // Alle einsammeln, damit egal welcher Interactor greift, IsOccupied korrekt gesetzt wird.
+        GetComponentsInChildren(true, xrInteractors);
+
+        if (xrInteractors.Count == 0)
+            Debug.LogError($"[HandItemTracker] Kein XRBaseInteractor unter '{name}' gefunden! " +
+                            "Near-Far/Poke Interactor Setup prüfen.");
+        else
+            Debug.Log($"[HandItemTracker] {xrInteractors.Count} Interactor(en) gefunden: " +
+                      string.Join(", ", xrInteractors.ConvertAll(i => i.name)));
     }
 
     private void OnEnable()
     {
-        if (xrInteractor == null) return;
-        xrInteractor.selectEntered.AddListener(OnSelectEntered);
-        xrInteractor.selectExited.AddListener(OnSelectExited);
+        foreach (var interactor in xrInteractors)
+        {
+            interactor.selectEntered.AddListener(OnSelectEntered);
+            interactor.selectExited.AddListener(OnSelectExited);
+        }
     }
 
     private void OnDisable()
     {
-        if (xrInteractor == null) return;
-        xrInteractor.selectEntered.RemoveListener(OnSelectEntered);
-        xrInteractor.selectExited.RemoveListener(OnSelectExited);
+        foreach (var interactor in xrInteractors)
+        {
+            if (interactor == null) continue; // Fail-Case: zerstört während Playmode-Wechsel
+            interactor.selectEntered.RemoveListener(OnSelectEntered);
+            interactor.selectExited.RemoveListener(OnSelectExited);
+        }
     }
 
     private void OnSelectEntered(SelectEnterEventArgs args)

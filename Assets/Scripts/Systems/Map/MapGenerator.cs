@@ -35,22 +35,34 @@ public class MapGenerator : MonoBehaviour
     public void GenerateFloor(int floor)
     {
         if (mapData == null) { Debug.LogError("[MapGenerator] Kein MapData!"); return; }
-        if (rowCount  < 2) rowCount  = 4;
+
+        // Fix 3: Minimum für columnsPerFloor erzwingen, sonst entstehen entartete Maps
+        if (columnsPerFloor < 4)
+        {
+            Debug.LogWarning($"[MapGenerator] columnsPerFloor={columnsPerFloor} zu klein, setze auf 4.");
+            columnsPerFloor = 4;
+        }
+
+        if (rowCount < 2) rowCount = 4;
         if (pathCount < 1) pathCount = 6;
-        // Clamp: pathCount darf nie mehr als rowCount sein damit jeder Startpunkt einzigartig ist
         pathCount = Mathf.Min(pathCount, rowCount);
 
         mapData.Reset();
         mapData.currentFloor = floor;
 
-        int halfNormal     = columnsPerFloor / 2;
-        miniBossCol        = halfNormal;
-        int postNormal     = columnsPerFloor - halfNormal;
-        bossCol            = miniBossCol + postNormal + 1;
-        totalCols          = bossCol + 1;
-        midRow             = (rowCount - 1) / 2;
-        guaranteedShopCol  = Mathf.Max(1, halfNormal / 3);
-        guaranteedForgeCol = miniBossCol + Mathf.Max(1, postNormal / 2);
+        int halfNormal = columnsPerFloor / 2;
+        miniBossCol = Mathf.Max(1, halfNormal); // Fix 2: miniBossCol darf nie 0 sein
+        int postNormal = columnsPerFloor - halfNormal;
+        bossCol = miniBossCol + postNormal + 1;
+        totalCols = bossCol + 1;
+        midRow = (rowCount - 1) / 2;
+
+        guaranteedShopCol  = Mathf.Clamp(Mathf.Max(1, halfNormal / 3), 1, miniBossCol - 1);
+        guaranteedForgeCol = Mathf.Clamp(miniBossCol + Mathf.Max(1, postNormal / 2), miniBossCol + 1, bossCol - 1);
+
+        // Fix 1: falls beide auf dieselbe Spalte fallen, Forge einen Schritt verschieben
+        if (guaranteedForgeCol == guaranteedShopCol)
+            guaranteedForgeCol = Mathf.Clamp(guaranteedForgeCol + 1, miniBossCol + 1, bossCol - 1);
 
         connections = new List<int>[totalCols, rowCount];
         for (int c = 0; c < totalCols; c++)
@@ -64,8 +76,8 @@ public class MapGenerator : MonoBehaviour
             if (node.column == 0) { node.isAccessible = true; node.isLocked = false; }
 
         Debug.Log($"[MapGenerator] Ebene {floor+1} | {mapData.nodes.Count} Nodes | " +
-                  $"{pathCount} Pfade | {rowCount} Rows | " +
-                  $"MiniBoss@{miniBossCol} Boss@{bossCol}");
+                $"{pathCount} Pfade | {rowCount} Rows | " +
+                $"MiniBoss@{miniBossCol} Boss@{bossCol} Shop@{guaranteedShopCol} Forge@{guaranteedForgeCol}");
     }
 
     private void GeneratePaths()

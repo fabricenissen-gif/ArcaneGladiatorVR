@@ -16,6 +16,10 @@ public class MapUI : MonoBehaviour
     [SerializeField] private float columnSpacing = 100f;
     [SerializeField] private float rowSpacing    = 100f;
 
+    [Header("Node Collider (XR Laser Hit)")]
+    [SerializeField] private float nodeColliderDepth  = 10f;
+    [SerializeField] private float nodeColliderZOffset = -5f;
+
     [Header("Line Colors")]
     [SerializeField] private Color lineColorActive = new Color(1f,   1f,   1f,   0.5f);
     [SerializeField] private Color lineColorDone   = new Color(0.6f, 0.6f, 0.6f, 0.9f);
@@ -26,6 +30,9 @@ public class MapUI : MonoBehaviour
     private Dictionary<string, Vector2> nodePositions = new();
     private float panelW;
     private float panelH;
+
+    // Cache statt FindObjectsByType bei jedem RenderMap-Aufruf
+    private XRMapInteractor[] cachedInteractors;
 
     // ── Awake ─────────────────────────────────────────────────
 
@@ -40,6 +47,9 @@ public class MapUI : MonoBehaviour
             return;
         }
         BuildContainers();
+
+        // Einmalig cachen statt bei jedem RenderMap neu zu suchen
+        cachedInteractors = FindObjectsByType<XRMapInteractor>(FindObjectsSortMode.None);
     }
 
     // ── Container ─────────────────────────────────────────────
@@ -115,16 +125,25 @@ public class MapUI : MonoBehaviour
         foreach (NodeData node in data.nodes)
             SpawnNode(node, nodePositions[node.nodeId]);
 
-        // XRMapInteractors informieren dass Map jetzt aktiv ist
-        foreach (var interactor in FindObjectsByType<XRMapInteractor>(FindObjectsSortMode.None))
-            interactor.SetMapVisible(true);
+        NotifyInteractors(true);
     }
 
     public void HideMap()
     {
         ClearMap();
-        foreach (var interactor in FindObjectsByType<XRMapInteractor>(FindObjectsSortMode.None))
-            interactor.SetMapVisible(false);
+        NotifyInteractors(false);
+    }
+
+    private void NotifyInteractors(bool visible)
+    {
+        if (cachedInteractors == null)
+            cachedInteractors = FindObjectsByType<XRMapInteractor>(FindObjectsSortMode.None);
+
+        foreach (var interactor in cachedInteractors)
+        {
+            if (interactor == null) continue; // falls Hand zur Laufzeit zerstört wurde
+            interactor.SetMapVisible(visible);
+        }
     }
 
     // ── AutoScale ─────────────────────────────────────────────
@@ -172,7 +191,23 @@ public class MapUI : MonoBehaviour
         rt.sizeDelta        = Vector2.one * nodeSize;
         rt.localScale       = Vector3.one;
 
-        // MapNodeButton übernimmt Farbe, Icon und Interaktion
+        // ── Collider korrekt dimensionieren (KRITISCHER FIX) ──
+        // Ohne dies bleibt der BoxCollider auf Default-Größe (1,1,1),
+        // viel kleiner als der sichtbare Button → Laser verfehlt ihn
+        // und trifft stattdessen den dahinterliegenden Panel-Collider.
+        BoxCollider col = go.GetComponent<BoxCollider>();
+        if (col != null)
+        {
+            col.size      = new Vector3(nodeSize, nodeSize, nodeColliderDepth);
+            col.center    = new Vector3(0f, 0f, nodeColliderZOffset);
+            col.isTrigger = false;
+        }
+        else
+        {
+            Debug.LogWarning($"[MapUI] Node-Prefab '{nodeButtonPrefab.name}' hat keinen BoxCollider! " +
+                              "XR-Laser kann diesen Node nicht treffen.");
+        }
+
         var nodeBtn = go.GetComponent<MapNodeButton>();
         if (nodeBtn != null)
         {
@@ -180,14 +215,12 @@ public class MapUI : MonoBehaviour
         }
         else
         {
-            // Fallback
             var img = go.GetComponent<Image>();
             if (img) img.color = GetNodeColor(node);
             var lbl = go.GetComponentInChildren<TextMeshProUGUI>();
             if (lbl) lbl.text = GetNodeIcon(node.type);
         }
 
-        // Unity Button für Desktop-Fallback
         var btn = go.GetComponent<Button>();
         if (btn)
         {
@@ -221,6 +254,11 @@ public class MapUI : MonoBehaviour
         rt.sizeDelta        = new Vector2(length, 4f);
         rt.localRotation    = Quaternion.Euler(0f, 0f, angle);
         rt.localScale       = Vector3.one;
+
+        // Bug 3 Fix: falls das Line-Prefab versehentlich einen Collider hat,
+        // darf er den Laser nicht blockieren
+        var lineCol = go.GetComponent<Collider>();
+        if (lineCol != null) lineCol.enabled = false;
 
         var img = go.GetComponent<Image>();
         if (img)
