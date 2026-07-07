@@ -8,14 +8,17 @@ public class RunManager : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private MapGenerator mapGenerator;
-    [SerializeField] private MapUI        mapUI;
-    [SerializeField] private MapData      mapData;
+    [SerializeField] private MapUI mapUI;
+    [SerializeField] private MapData mapData;
 
-    public UnityEvent<NodeData> OnNodeSelected = new();
-    public UnityEvent<MapData>  OnMapUpdated   = new();
+    // Fix: UnityEvent<T> statt UnityEvent, da Invoke(node) / Invoke(mapData)
+    // einen Parameter übergibt. Klassen müssen als [System.Serializable]
+    // markiert sein, damit sie im Inspector sichtbar sind.
+    public NodeSelectedEvent OnNodeSelected = new();
+    public MapUpdatedEvent OnMapUpdated = new();
 
-    public NodeData CurrentNode  { get; private set; }
-    public int      CurrentFloor { get; private set; }
+    public NodeData CurrentNode { get; private set; }
+    public int CurrentFloor { get; private set; }
 
     private void Awake()
     {
@@ -30,7 +33,7 @@ public class RunManager : MonoBehaviour
     public void StartRun()
     {
         CurrentFloor = 0;
-        CurrentNode  = null;
+        CurrentNode = null;
         GenerateAndShowFloor();
     }
 
@@ -42,6 +45,16 @@ public class RunManager : MonoBehaviour
             Debug.LogWarning($"[RunManager] Node {nodeId} nicht gefunden.");
             return;
         }
+
+        // Fail-Case: Re-Klick auf den bereits aktiven Node soll keine
+        // erneute State-Änderung auslösen (verhinderte vorher versehentlich
+        // isCompleted=true auf dem eigenen, noch nicht abgeschlossenen Node).
+        if (CurrentNode != null && CurrentNode.nodeId == nodeId)
+        {
+            Debug.Log($"[RunManager] Node {nodeId} ist bereits aktiv, ignoriere Re-Klick.");
+            return;
+        }
+
         if (!node.isAccessible)
         {
             Debug.LogWarning($"[RunManager] Node {nodeId} ist nicht erreichbar.");
@@ -55,11 +68,11 @@ public class RunManager : MonoBehaviour
 
         if (CurrentNode != null)
         {
-            CurrentNode.isCompleted  = true;
+            CurrentNode.isCompleted = true;
             CurrentNode.isAccessible = false;
         }
 
-        CurrentNode       = node;
+        CurrentNode = node;
         node.isAccessible = true;
 
         LockSiblingNodes(node);
@@ -101,7 +114,7 @@ public class RunManager : MonoBehaviour
             if (node.nodeId == chosen.nodeId) continue;
             if (node.column == chosen.column)
             {
-                node.isLocked     = true;
+                node.isLocked = true;
                 node.isAccessible = false;
             }
         }
@@ -114,7 +127,7 @@ public class RunManager : MonoBehaviour
             NodeData next = mapData.GetNode(nextId);
             if (next == null) continue;
             next.isAccessible = true;
-            next.isLocked     = false;
+            next.isLocked = false;
         }
     }
 
@@ -123,8 +136,16 @@ public class RunManager : MonoBehaviour
         foreach (var node in mapData.nodes)
         {
             if (node.column >= currentColumn) continue;
-            node.isCompleted  = true;
+            node.isCompleted = true;
             node.isAccessible = false;
         }
     }
 }
+
+// Eigene UnityEvent-Typen mit Parameter, müssen außerhalb der MonoBehaviour-Klasse
+// stehen (oder in eigener Datei), damit Unity sie im Inspector serialisieren kann.
+[System.Serializable]
+public class NodeSelectedEvent : UnityEvent<NodeData> { }
+
+[System.Serializable]
+public class MapUpdatedEvent : UnityEvent<MapData> { }

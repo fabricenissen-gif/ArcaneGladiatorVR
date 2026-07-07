@@ -7,32 +7,31 @@ public class MapUI : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private RectTransform mapPanel;
-    [SerializeField] private GameObject    nodeButtonPrefab;
-    [SerializeField] private GameObject    linePrefab;
+    [SerializeField] private GameObject nodeButtonPrefab;
+    [SerializeField] private GameObject linePrefab;
 
     [Header("Layout")]
-    [SerializeField] private float padding       = 60f;
-    [SerializeField] private float nodeSize      = 70f;
+    [SerializeField] private float padding = 60f;
+    [SerializeField] private float nodeSize = 70f;
     [SerializeField] private float columnSpacing = 100f;
-    [SerializeField] private float rowSpacing    = 100f;
-
-    [Header("Node Collider (XR Laser Hit)")]
-    [SerializeField] private float nodeColliderDepth  = 10f;
-    [SerializeField] private float nodeColliderZOffset = -5f;
+    [SerializeField] private float rowSpacing = 100f;
 
     [Header("Line Colors")]
-    [SerializeField] private Color lineColorActive = new Color(1f,   1f,   1f,   0.5f);
-    [SerializeField] private Color lineColorDone   = new Color(0.6f, 0.6f, 0.6f, 0.9f);
+    [SerializeField] private Color lineColorActive = new Color(1f, 1f, 1f, 0.5f);
+    [SerializeField] private Color lineColorDone = new Color(0.6f, 0.6f, 0.6f, 0.9f);
+
+    [Header("Hand State (optional)")]
+    [Tooltip("Solange eine dieser Hände eine Waffe hält, wird die Karte für UI-Klicks gesperrt.")]
+    [SerializeField] private HandItemTracker rightHandTracker;
+    [SerializeField] private HandItemTracker leftHandTracker;
 
     private RectTransform linesContainer;
     private RectTransform nodesContainer;
-    private MapData       currentMap;
+    private MapData currentMap;
     private Dictionary<string, Vector2> nodePositions = new();
     private float panelW;
     private float panelH;
-
-    // Cache statt FindObjectsByType bei jedem RenderMap-Aufruf
-    private XRMapInteractor[] cachedInteractors;
+    private CanvasGroup canvasGroup;
 
     // ── Awake ─────────────────────────────────────────────────
 
@@ -46,10 +45,24 @@ public class MapUI : MonoBehaviour
             Debug.LogError("[MapUI] Kein RectTransform gefunden!");
             return;
         }
-        BuildContainers();
 
-        // Einmalig cachen statt bei jedem RenderMap neu zu suchen
-        cachedInteractors = FindObjectsByType<XRMapInteractor>(FindObjectsSortMode.None);
+        canvasGroup = GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+
+        BuildContainers();
+    }
+
+    private void Update()
+    {
+        if (canvasGroup == null) return;
+
+        bool handOccupied = (rightHandTracker != null && rightHandTracker.IsOccupied)
+            || (leftHandTracker != null && leftHandTracker.IsOccupied);
+
+        // Sperrt UI-Raycasts komplett solange eine Waffe gehalten wird —
+        // ersetzt separates Blocker-Skript am Controller.
+        canvasGroup.blocksRaycasts = !handOccupied;
     }
 
     // ── Container ─────────────────────────────────────────────
@@ -69,14 +82,14 @@ public class MapUI : MonoBehaviour
 
     private RectTransform MakeContainer(string n)
     {
-        var go        = new GameObject(n, typeof(RectTransform));
+        var go = new GameObject(n, typeof(RectTransform));
         go.transform.SetParent(mapPanel, false);
-        var rt        = go.GetComponent<RectTransform>();
-        rt.anchorMin  = Vector2.zero;
-        rt.anchorMax  = Vector2.one;
-        rt.offsetMin  = Vector2.zero;
-        rt.offsetMax  = Vector2.zero;
-        rt.pivot      = new Vector2(0f, 1f);
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        rt.pivot = new Vector2(0f, 1f);
         rt.localScale = Vector3.one;
         return rt;
     }
@@ -117,33 +130,18 @@ public class MapUI : MonoBehaviour
                 NodeData next = data.GetNode(nextId);
                 if (next == null) continue;
                 if (nodePositions.TryGetValue(node.nodeId, out Vector2 from) &&
-                    nodePositions.TryGetValue(next.nodeId,  out Vector2 to))
+                    nodePositions.TryGetValue(next.nodeId, out Vector2 to))
                     DrawLine(from, to, node.isCompleted);
             }
 
         // Nodes danach → vor Linien
         foreach (NodeData node in data.nodes)
             SpawnNode(node, nodePositions[node.nodeId]);
-
-        NotifyInteractors(true);
     }
 
     public void HideMap()
     {
         ClearMap();
-        NotifyInteractors(false);
-    }
-
-    private void NotifyInteractors(bool visible)
-    {
-        if (cachedInteractors == null)
-            cachedInteractors = FindObjectsByType<XRMapInteractor>(FindObjectsSortMode.None);
-
-        foreach (var interactor in cachedInteractors)
-        {
-            if (interactor == null) continue; // falls Hand zur Laufzeit zerstört wurde
-            interactor.SetMapVisible(visible);
-        }
     }
 
     // ── AutoScale ─────────────────────────────────────────────
@@ -154,15 +152,15 @@ public class MapUI : MonoBehaviour
         foreach (NodeData n in data.nodes)
         {
             if (n.column > maxCol) maxCol = n.column;
-            if (n.row    > maxRow) maxRow = n.row;
+            if (n.row > maxRow) maxRow = n.row;
         }
 
         float usableW = panelW - padding * 2f;
         float usableH = panelH - padding * 2f;
 
         columnSpacing = maxCol > 0 ? usableW / maxCol : usableW;
-        rowSpacing    = maxRow > 0 ? usableH / maxRow : usableH;
-        nodeSize      = Mathf.Clamp(Mathf.Min(columnSpacing, rowSpacing) * 0.65f, 30f, 90f);
+        rowSpacing = maxRow > 0 ? usableH / maxRow : usableH;
+        nodeSize = Mathf.Clamp(Mathf.Min(columnSpacing, rowSpacing) * 0.65f, 30f, 90f);
 
         Debug.Log($"[MapUI] Panel:{panelW:F0}x{panelH:F0} | Col:{columnSpacing:F0} Row:{rowSpacing:F0} Node:{nodeSize:F0}");
     }
@@ -171,8 +169,8 @@ public class MapUI : MonoBehaviour
 
     private Vector2 GetNodePosition(NodeData node)
     {
-        float x =  padding + node.column * columnSpacing;
-        float y = -(padding + node.row   * rowSpacing);
+        float x = padding + node.column * columnSpacing;
+        float y = -(padding + node.row * rowSpacing);
         return new Vector2(x, y);
     }
 
@@ -182,32 +180,17 @@ public class MapUI : MonoBehaviour
     {
         if (nodeButtonPrefab == null) return;
 
-        GameObject    go = Instantiate(nodeButtonPrefab, nodesContainer);
+        GameObject go = Instantiate(nodeButtonPrefab, nodesContainer);
         RectTransform rt = go.GetComponent<RectTransform>();
-        rt.anchorMin        = new Vector2(0f, 1f);
-        rt.anchorMax        = new Vector2(0f, 1f);
-        rt.pivot            = new Vector2(0.5f, 0.5f);
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = pos;
-        rt.sizeDelta        = Vector2.one * nodeSize;
-        rt.localScale       = Vector3.one;
+        rt.sizeDelta = Vector2.one * nodeSize;
+        rt.localScale = Vector3.one;
 
-        // ── Collider korrekt dimensionieren (KRITISCHER FIX) ──
-        // Ohne dies bleibt der BoxCollider auf Default-Größe (1,1,1),
-        // viel kleiner als der sichtbare Button → Laser verfehlt ihn
-        // und trifft stattdessen den dahinterliegenden Panel-Collider.
-        BoxCollider col = go.GetComponent<BoxCollider>();
-        if (col != null)
-        {
-            col.size      = new Vector3(nodeSize, nodeSize, nodeColliderDepth);
-            col.center    = new Vector3(0f, 0f, nodeColliderZOffset);
-            col.isTrigger = false;
-        }
-        else
-        {
-            Debug.LogWarning($"[MapUI] Node-Prefab '{nodeButtonPrefab.name}' hat keinen BoxCollider! " +
-                              "XR-Laser kann diesen Node nicht treffen.");
-        }
-
+        // Fix: MapNodeButton kümmert sich jetzt komplett selbst um Button/onClick
+        // (siehe MapNodeButton.Awake()). MapUI muss sich darum nicht mehr kümmern.
         var nodeBtn = go.GetComponent<MapNodeButton>();
         if (nodeBtn != null)
         {
@@ -215,22 +198,20 @@ public class MapUI : MonoBehaviour
         }
         else
         {
+            // Fallback falls kein MapNodeButton auf dem Prefab sitzt
             var img = go.GetComponent<Image>();
             if (img) img.color = GetNodeColor(node);
             var lbl = go.GetComponentInChildren<TextMeshProUGUI>();
             if (lbl) lbl.text = GetNodeIcon(node.type);
-        }
 
-        var btn = go.GetComponent<Button>();
-        if (btn)
-        {
-            btn.interactable = node.isAccessible && !node.isCompleted && !node.isLocked;
-            string id = node.nodeId;
-            btn.onClick.AddListener(() => RunManager.Instance?.SelectNode(id));
+            var btn = go.GetComponent<Button>();
+            if (btn)
+            {
+                btn.interactable = node.isAccessible && !node.isCompleted && !node.isLocked;
+                string id = node.nodeId;
+                btn.onClick.AddListener(() => RunManager.Instance?.SelectNode(id));
+            }
         }
-
-        var tooltip = go.GetComponent<MapNodeTooltip>();
-        if (tooltip) tooltip.SetNode(node);
     }
 
     // ── Draw Line ─────────────────────────────────────────────
@@ -239,26 +220,21 @@ public class MapUI : MonoBehaviour
     {
         if (linePrefab == null) return;
 
-        Vector2 dir    = to - from;
-        float   length = dir.magnitude;
+        Vector2 dir = to - from;
+        float length = dir.magnitude;
         if (length < 1f) return;
 
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
 
-        GameObject    go = Instantiate(linePrefab, linesContainer);
+        GameObject go = Instantiate(linePrefab, linesContainer);
         RectTransform rt = go.GetComponent<RectTransform>();
-        rt.anchorMin        = new Vector2(0f, 1f);
-        rt.anchorMax        = new Vector2(0f, 1f);
-        rt.pivot            = new Vector2(0.5f, 0.5f);
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = from + dir * 0.5f;
-        rt.sizeDelta        = new Vector2(length, 4f);
-        rt.localRotation    = Quaternion.Euler(0f, 0f, angle);
-        rt.localScale       = Vector3.one;
-
-        // Bug 3 Fix: falls das Line-Prefab versehentlich einen Collider hat,
-        // darf er den Laser nicht blockieren
-        var lineCol = go.GetComponent<Collider>();
-        if (lineCol != null) lineCol.enabled = false;
+        rt.sizeDelta = new Vector2(length, 4f);
+        rt.localRotation = Quaternion.Euler(0f, 0f, angle);
+        rt.localScale = Vector3.one;
 
         var img = go.GetComponent<Image>();
         if (img)
@@ -277,22 +253,22 @@ public class MapUI : MonoBehaviour
 
     private Color GetNodeColor(NodeData node)
     {
-        if (node.isCompleted)  return new Color(0.4f, 0.4f, 0.4f);
-        if (node.isLocked)     return new Color(0.2f, 0.2f, 0.2f);
-        if (node.isAccessible) return new Color(1f,   0.85f, 0.3f);
+        if (node.isCompleted) return new Color(0.4f, 0.4f, 0.4f);
+        if (node.isLocked) return new Color(0.2f, 0.2f, 0.2f);
+        if (node.isAccessible) return new Color(1f, 0.85f, 0.3f);
         return new Color(0.6f, 0.6f, 0.6f);
     }
 
     private string GetNodeIcon(NodeType type) => type switch
     {
-        NodeType.Combat   => "K",
-        NodeType.Elite    => "E",
-        NodeType.Event    => "?",
-        NodeType.Shop     => "$",
-        NodeType.Forge    => "S",
-        NodeType.Mystery  => "!",
+        NodeType.Combat => "K",
+        NodeType.Elite => "E",
+        NodeType.Event => "?",
+        NodeType.Shop => "$",
+        NodeType.Forge => "S",
+        NodeType.Mystery => "!",
         NodeType.MiniBoss => "M",
-        NodeType.Boss     => "B",
-        _                 => "?"
+        NodeType.Boss => "B",
+        _ => "?"
     };
 }

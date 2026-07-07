@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1237788619173118148}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: NodesContainer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -44,7 +44,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5642816222971678976}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: LinesContainer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -83,7 +83,7 @@ GameObject:
   - component: {fileID: 3933460969835263799}
   - component: {fileID: 8678917026950057944}
   - component: {fileID: 6785982076425700563}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Map
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -187,21 +187,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c08464e3ffb63a840a5f1d92f5447636, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapUI
-  mapCanvas: {fileID: 788920904280288271}
-  nodesContainer: {fileID: 1237788619173118148}
-  linesContainer: {fileID: 5642816222971678976}
+  mapPanel: {fileID: 0}
   nodeButtonPrefab: {fileID: 3025440975473266721, guid: 763e179d3965b4f488f43e92b462de87, type: 3}
   linePrefab: {fileID: 2072927884312633677, guid: a0100f529a4935d4e85f92a9d289c905, type: 3}
+  padding: 60
+  nodeSize: 80
   columnSpacing: 120
   rowSpacing: 130
-  nodeSize: 80
-  colorCombat: {r: 0.85, g: 0.25, b: 0.25, a: 1}
-  colorElite: {r: 0.9, g: 0.5, b: 0.1, a: 1}
-  colorEvent: {r: 1, g: 0, b: 0.9372618, a: 1}
-  colorShop: {r: 0.47769243, g: 1, b: 0, a: 1}
-  colorForge: {r: 0, g: 1, b: 0.8780657, a: 1}
-  colorMystery: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  colorMiniBoss: {r: 0.9, g: 0.3, b: 0.6, a: 1}
-  colorBoss: {r: 0.7, g: 0.1, b: 0.1, a: 1}
-  colorLocked: {r: 0.3, g: 0.3, b: 0.3, a: 1}
-  colorDone: {r: 0.4, g: 0.4, b: 0.4, a: 1}
+  lineColorActive: {r: 1, g: 1, b: 1, a: 0.5}
+  lineColorDone: {r: 0.6, g: 0.6, b: 0.6, a: 0.9}
+  rightHandTracker: {fileID: 0}
+  leftHandTracker: {fileID: 0}
