@@ -21,6 +21,6 @@ EditorBuildSettings:
     path: Assets/Scenes/Shop_Test.unity
     guid: d2e8f96a468d4364696d02862372f140
   m_configObjects:
-    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: c348712bda248c246b8c49b3db54643f, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: eb0017fef474ff644bdcafda29346588, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 2fe8049d013b6044f9788f2c95002624, type: 2}
