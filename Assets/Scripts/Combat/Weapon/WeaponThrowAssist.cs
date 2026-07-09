@@ -40,21 +40,29 @@ public class WeaponThrowAssist : MonoBehaviour
     [SerializeField] private float flightCastRadius = 0.12f;
     [SerializeField] private LayerMask flightHitLayers;
 
-    private Rigidbody          rb;
-    private XRGrabInteractable grabInteractable;
-    private WeaponSweepDamage  sweepDamage;
+    [Header("Handoff Protection")]
+    [Tooltip("Zeitfenster nach Release, in dem ein sofortiges Re-Grab (Interactor-Handoff, " +
+             "z.B. durch Velocity-Tracking-Überschwingen bei Near-Far Interactor) den Wurf " +
+             "abbricht, statt ihn auszuführen. Bei echtem, bewusstem Loslassen kaum spürbar.")]
+    [SerializeField] private float handoffGraceWindow = 0.05f;
 
-    private bool    isThrown             = false;
-    private bool    isStuck              = false;
+    private Rigidbody rb;
+    private XRGrabInteractable grabInteractable;
+    private WeaponSweepDamage sweepDamage;
+
+    private bool isThrown = false;
+    private bool isStuck = false;
     private Vector3 lastPosition;
-    private bool    damageDealtThisThrow = false;
+    private bool damageDealtThisThrow = false;
 
     // Charge-Status beim Release einfrieren
     private bool wasChargedAtRelease = false;
 
-    private Vector3[] velocitySamples   = new Vector3[5];
-    private int       velocitySampleIdx = 0;
-    private bool      isHeld            = false;
+    private Vector3[] velocitySamples = new Vector3[5];
+    private int velocitySampleIdx = 0;
+    private bool isHeld = false;
+
+    private Coroutine pendingThrowRoutine;
 
     public bool IsThrown => isThrown;
 
@@ -62,14 +70,14 @@ public class WeaponThrowAssist : MonoBehaviour
 
     private void Awake()
     {
-        rb               = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
         grabInteractable = GetComponent<XRGrabInteractable>();
-        sweepDamage      = GetComponent<WeaponSweepDamage>();
+        sweepDamage = GetComponent<WeaponSweepDamage>();
         if (chargeSystem == null)
             chargeSystem = GetComponent<WeaponChargeSystem>();
 
         Debug.Log($"[WeaponThrowAssist] Awake — sweepDamage:{sweepDamage != null} " +
-                  $"chargeSystem:{chargeSystem != null}");
+                   $"chargeSystem:{chargeSystem != null}");
     }
 
     private void OnEnable()
@@ -98,8 +106,8 @@ public class WeaponThrowAssist : MonoBehaviour
         if (!isThrown || isStuck) return;
 
         Vector3 currentPos = transform.position;
-        Vector3 delta      = currentPos - lastPosition;
-        float   distance   = delta.magnitude;
+        Vector3 delta = currentPos - lastPosition;
+        float distance = delta.magnitude;
 
         bool hitFound = false;
 
@@ -134,19 +142,16 @@ public class WeaponThrowAssist : MonoBehaviour
                 if (col.transform.IsChildOf(transform)) continue;
 
                 Debug.Log($"[WeaponThrowAssist] OverlapFallback Hit — " +
-                          $"obj:'{col.gameObject.name}' " +
-                          $"layer:{LayerMask.LayerToName(col.gameObject.layer)}");
+                           $"obj:'{col.gameObject.name}' " +
+                           $"layer:{LayerMask.LayerToName(col.gameObject.layer)}");
 
-                RaycastHit fakeHit = new RaycastHit();
-                // ClosestPoint als Trefferpunkt
                 Vector3 closest = col.ClosestPoint(currentPos);
 
-                int  layer       = col.gameObject.layer;
+                int layer = col.gameObject.layer;
                 bool isStickable = (stickableLayers.value & (1 << layer)) > 0;
 
                 if (isStickable && rb.linearVelocity.magnitude >= minVelocityToStick)
                 {
-                    // Für Overlap-Stick: manuellen Hit bauen
                     StickToCollider(col, closest);
                     return;
                 }
@@ -165,13 +170,13 @@ public class WeaponThrowAssist : MonoBehaviour
         // Flug-Alignment
         if (rb.linearVelocity.sqrMagnitude > 1f && flightDirectionRef != null)
         {
-            Vector3 flightDir       = rb.linearVelocity.normalized;
+            Vector3 flightDir = rb.linearVelocity.normalized;
             Vector3 currentSpikeDir = flightDirectionRef.forward;
 
             if (currentThrowStyle == ThrowStyle.Dart)
             {
                 rb.AddForce(Physics.gravity * dartGravityScale, ForceMode.Acceleration);
-                Quaternion targetRotForRef        = Quaternion.LookRotation(flightDir, flightDirectionRef.up);
+                Quaternion targetRotForRef = Quaternion.LookRotation(flightDir, flightDirectionRef.up);
                 Quaternion targetRotationOfParent = targetRotForRef * Quaternion.Inverse(flightDirectionRef.localRotation);
                 rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotationOfParent,
                     dartAlignmentSpeed * Time.fixedDeltaTime));
@@ -181,7 +186,7 @@ public class WeaponThrowAssist : MonoBehaviour
             else if (currentThrowStyle == ThrowStyle.Chaotic)
             {
                 Vector3 rotAxis = Vector3.Cross(currentSpikeDir, flightDir);
-                float   angle   = Vector3.Angle(currentSpikeDir, flightDir);
+                float angle = Vector3.Angle(currentSpikeDir, flightDir);
                 rb.AddTorque(rotAxis.normalized * (angle * chaoticAlignmentForce * Time.fixedDeltaTime));
                 rb.angularVelocity = Vector3.Lerp(rb.angularVelocity, Vector3.zero,
                     Time.fixedDeltaTime * 2f);
@@ -194,15 +199,15 @@ public class WeaponThrowAssist : MonoBehaviour
     // Gibt true zurück wenn gesteckt (Loop abbrechen)
     private bool ProcessFlightHit(RaycastHit hit)
     {
-        int  layer       = hit.collider.gameObject.layer;
+        int layer = hit.collider.gameObject.layer;
         bool isStickable = (stickableLayers.value & (1 << layer)) > 0;
 
         Debug.Log($"[WeaponThrowAssist] FlightCast Hit — " +
-                  $"obj:'{hit.collider.gameObject.name}' " +
-                  $"layer:{LayerMask.LayerToName(layer)}({layer}) " +
-                  $"stickable:{isStickable} " +
-                  $"vel:{rb.linearVelocity.magnitude:F2} " +
-                  $"wasCharged:{wasChargedAtRelease}");
+                   $"obj:'{hit.collider.gameObject.name}' " +
+                   $"layer:{LayerMask.LayerToName(layer)}({layer}) " +
+                   $"stickable:{isStickable} " +
+                   $"vel:{rb.linearVelocity.magnitude:F2} " +
+                   $"wasCharged:{wasChargedAtRelease}");
 
         if (isStickable && rb.linearVelocity.magnitude >= minVelocityToStick)
         {
@@ -224,12 +229,23 @@ public class WeaponThrowAssist : MonoBehaviour
     private void OnGrabbed(SelectEnterEventArgs args)
     {
         Debug.Log("[WeaponThrowAssist] OnGrabbed.");
-        isHeld               = true;
-        isThrown             = false;
-        isStuck              = false;
+
+        // Fix: Falls ein Wurf durch Interactor-Handoff bereits vorbereitet wurde,
+        // aber innerhalb der Grace-Window sofort neu gegriffen wird, abbrechen —
+        // verhindert ungewollten Wurf beim Schwingen mit Velocity-Tracking-Movement-Type.
+        if (pendingThrowRoutine != null)
+        {
+            StopCoroutine(pendingThrowRoutine);
+            pendingThrowRoutine = null;
+            Debug.Log("[WeaponThrowAssist] Wurf abgebrochen — sofortiges Re-Grab erkannt (Interactor-Handoff).");
+        }
+
+        isHeld = true;
+        isThrown = false;
+        isStuck = false;
         damageDealtThisThrow = false;
-        wasChargedAtRelease  = false;
-        velocitySampleIdx    = 0;
+        wasChargedAtRelease = false;
+        velocitySampleIdx = 0;
         for (int i = 0; i < velocitySamples.Length; i++) velocitySamples[i] = Vector3.zero;
         if (sweepDamage != null) sweepDamage.isFlying = false;
         ResetPhysics();
@@ -248,7 +264,7 @@ public class WeaponThrowAssist : MonoBehaviour
         if (sweepDamage != null) sweepDamage.isFlying = true;
 
         Vector3 avgVelocity = Vector3.zero;
-        int     validCount  = 0;
+        int validCount = 0;
         foreach (Vector3 s in velocitySamples)
         {
             if (s.sqrMagnitude > 0.001f) { avgVelocity += s; validCount++; }
@@ -257,15 +273,26 @@ public class WeaponThrowAssist : MonoBehaviour
 
         float speed = avgVelocity.magnitude;
         Debug.Log($"[WeaponThrowAssist] OnReleased — speed:{speed:F2} " +
-                  $"wasCharged:{wasChargedAtRelease} rb.isKinematic:{rb.isKinematic}");
+                   $"wasCharged:{wasChargedAtRelease} rb.isKinematic:{rb.isKinematic}");
 
         if (speed > 0.5f)
-            StartCoroutine(BeginThrowAfterXRI(avgVelocity));
+        {
+            pendingThrowRoutine = StartCoroutine(BeginThrowAfterHandoffCheck(avgVelocity));
+        }
         else
         {
             if (sweepDamage != null) sweepDamage.isFlying = false;
             Debug.Log($"[WeaponThrowAssist] Zu langsam ({speed:F2}) — kein Throw.");
         }
+    }
+
+    // Fix: Grace-Window vor dem eigentlichen Wurf-Start abwarten. Falls OnGrabbed
+    // währenddessen erneut feuert (Interactor-Handoff), wird diese Coroutine dort gestoppt.
+    private IEnumerator BeginThrowAfterHandoffCheck(Vector3 releaseVelocity)
+    {
+        yield return new WaitForSeconds(handoffGraceWindow);
+        yield return StartCoroutine(BeginThrowAfterXRI(releaseVelocity));
+        pendingThrowRoutine = null;
     }
 
     private IEnumerator BeginThrowAfterXRI(Vector3 releaseVelocity)
@@ -286,28 +313,28 @@ public class WeaponThrowAssist : MonoBehaviour
 
         float multiplier = wasChargedAtRelease ? chargedThrowSpeedMultiplier : throwSpeedMultiplier;
         Debug.Log($"[WeaponThrowAssist] Throw gestartet — " +
-                  $"multiplier:{multiplier} wasCharged:{wasChargedAtRelease}");
+                   $"multiplier:{multiplier} wasCharged:{wasChargedAtRelease}");
 
-        rb.linearVelocity    = releaseVelocity * multiplier;
-        isThrown             = true;
-        isStuck              = false;
+        rb.linearVelocity = releaseVelocity * multiplier;
+        isThrown = true;
+        isStuck = false;
         damageDealtThisThrow = false;
-        lastPosition         = transform.position;
+        lastPosition = transform.position;
         if (sweepDamage != null) sweepDamage.isFlying = true;
 
         Debug.Log($"[WeaponThrowAssist] velocity:{rb.linearVelocity} " +
-                  $"speed:{rb.linearVelocity.magnitude:F2}");
+                   $"speed:{rb.linearVelocity.magnitude:F2}");
 
         if (currentThrowStyle == ThrowStyle.Dart)
         {
             if (flightDirectionRef != null)
             {
                 Vector3 originalCOM = rb.centerOfMass;
-                Vector3 spikeCOM    = transform.InverseTransformPoint(flightDirectionRef.position);
-                rb.centerOfMass     = Vector3.Lerp(originalCOM, spikeCOM, dartCenterOfMassOffset);
+                Vector3 spikeCOM = transform.InverseTransformPoint(flightDirectionRef.position);
+                rb.centerOfMass = Vector3.Lerp(originalCOM, spikeCOM, dartCenterOfMassOffset);
             }
             rb.angularVelocity = Vector3.zero;
-            rb.useGravity      = false;
+            rb.useGravity = false;
         }
         else if (currentThrowStyle == ThrowStyle.Chaotic)
         {
@@ -326,16 +353,16 @@ public class WeaponThrowAssist : MonoBehaviour
 
     private void StickToCollider(Collider col, Vector3 hitPoint)
     {
-        isStuck  = true;
+        isStuck = true;
         isThrown = false;
         if (sweepDamage != null) sweepDamage.isFlying = false;
 
         Vector3 dir = flightDirectionRef != null ? flightDirectionRef.forward : transform.forward;
         transform.position = hitPoint + dir * penetrationDepth;
 
-        rb.linearVelocity  = Vector3.zero;
+        rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-        rb.isKinematic     = true;
+        rb.isKinematic = true;
         rb.ResetCenterOfMass();
 
         Vector3 worldScale = transform.lossyScale;
@@ -359,7 +386,7 @@ public class WeaponThrowAssist : MonoBehaviour
         transform.SetParent(null, true);
         transform.localScale = worldScale;
 
-        isStuck  = false;
+        isStuck = false;
         isThrown = false;
         if (sweepDamage != null) sweepDamage.isFlying = false;
 
@@ -376,8 +403,19 @@ public class WeaponThrowAssist : MonoBehaviour
 
     private void ResetPhysics()
     {
-        rb.useGravity  = true;
+        rb.useGravity = true;
         rb.isKinematic = false;
         rb.ResetCenterOfMass();
+    }
+
+    private void OnDestroy()
+    {
+        // Fail-Case: Falls das Objekt zerstört wird, während noch eine
+        // Wurf-Coroutine läuft (z.B. beim additiven Unload der Encounter-Szene).
+        if (pendingThrowRoutine != null)
+        {
+            StopCoroutine(pendingThrowRoutine);
+            pendingThrowRoutine = null;
+        }
     }
 }

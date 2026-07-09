@@ -327,6 +327,22 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3903192631533431984, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: m_FarAttachMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3903192631533431984, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: m_ThrowOnDetach
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3903192631533431984, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: m_Colliders.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3903192631533431984, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+      propertyPath: 'm_Colliders.Array.data[0]'
+      value: 
+      objectReference: {fileID: 1556451971}
+    - target: {fileID: 3903192631533431984, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
       propertyPath: m_StartingSelectFilters.Array.size
       value: 0
       objectReference: {fileID: 0}
@@ -422,7 +438,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4210011752554216713, guid: 53e1e5fbefcf4334c9e48bcd2d23d5e3, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.5
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 4210011752554216713, guid: 53e1e5fbefcf4334c9e48bcd2d23d5e3, type: 3}
       propertyPath: m_LocalPosition.z
@@ -881,6 +897,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponNearOnlyFilter
   maxNearDistance: 0.3
+--- !u!65 &1556451971 stripped
+BoxCollider:
+  m_CorrespondingSourceObject: {fileID: 1471188984083141789, guid: 4ea2c6fd47d24234aa0112c750f4dae6, type: 3}
+  m_PrefabInstance: {fileID: 969753895}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1599151440
 GameObject:
   m_ObjectHideFlags: 0
