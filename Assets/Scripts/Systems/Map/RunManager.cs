@@ -11,9 +11,9 @@ public class RunManager : MonoBehaviour
     [SerializeField] private MapUI mapUI;
     [SerializeField] private MapData mapData;
 
-    // Fix: UnityEvent<T> statt UnityEvent, da Invoke(node) / Invoke(mapData)
-    // einen Parameter übergibt. Klassen müssen als [System.Serializable]
-    // markiert sein, damit sie im Inspector sichtbar sind.
+    // UnityEvent<T> statt UnityEvent, da Invoke(node) / Invoke(mapData)
+    // einen Parameter übergibt. Eigene Klassen (unten) müssen als
+    // [System.Serializable] markiert sein, damit sie im Inspector sichtbar sind.
     public NodeSelectedEvent OnNodeSelected = new();
     public MapUpdatedEvent OnMapUpdated = new();
 

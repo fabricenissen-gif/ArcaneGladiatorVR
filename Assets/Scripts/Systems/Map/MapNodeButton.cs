@@ -74,6 +74,15 @@ public class MapNodeButton : MonoBehaviour
         }
         Debug.Log($"[MapNodeButton] Aktiviert: [{nodeData.type}] {nodeData.nodeId}");
         RunManager.Instance?.SelectNode(nodeData.nodeId);
+
+        // Fail-Case: EncounterManager fehlt in der Szene → lauter Fehler statt stiller ?.-Skip
+        if (EncounterManager.Instance == null)
+        {
+            Debug.LogError("[MapNodeButton] EncounterManager.Instance ist null! " +
+                            "Existiert ein GameObject mit EncounterManager-Komponente in der Szene?");
+            return;
+        }
+        EncounterManager.Instance.LoadEncounter(nodeData);
     }
 
     /// <summary>Laser-Hover beginnt.</summary>

@@ -2362,6 +2362,7 @@ GameObject:
   - component: {fileID: 454611782305061163}
   - component: {fileID: 3768948304378173094}
   - component: {fileID: 7326232738338870531}
+  - component: {fileID: 9066344608708759836}
   m_Layer: 3
   m_Name: Right Controller
   m_TagString: RightHand
@@ -2533,6 +2534,20 @@ MonoBehaviour:
     m_Interactions: 
     m_SingletonActionBindings: []
     m_Flags: 0
+--- !u!114 &9066344608708759836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7827421600031795342}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 662c39048ac44a949b350202b9e9ba19, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandItemTracker
+  lineVisual: {fileID: 0}
+  nearFarInteractor: {fileID: 0}
 --- !u!1 &7835609312559078738
 GameObject:
   m_ObjectHideFlags: 0
@@ -3921,6 +3936,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 449540343963643979}
     m_Modifications:
+    - target: {fileID: 130500635472496801, guid: b200f6587d118224eba8467281481800, type: 3}
+      propertyPath: m_PhysicsLayerMask.m_Bits
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2447424620550846319, guid: b200f6587d118224eba8467281481800, type: 3}
       propertyPath: m_Name
       value: Near-Far Interactor
@@ -3978,20 +3997,36 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4808866746549998793, guid: b200f6587d118224eba8467281481800, type: 3}
-      propertyPath: m_EnableFarCasting
+      propertyPath: m_FarAttachMode
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4808866746549998793, guid: b200f6587d118224eba8467281481800, type: 3}
+      propertyPath: m_EnableFarCasting
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4808866746549998793, guid: b200f6587d118224eba8467281481800, type: 3}
       propertyPath: m_InteractionLayers.m_Bits
-      value: 63
+      value: 127
       objectReference: {fileID: 0}
     - target: {fileID: 4808866746549998793, guid: b200f6587d118224eba8467281481800, type: 3}
       propertyPath: m_SortNearTargetsAfterTargetFilter
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6288467125497789300, guid: b200f6587d118224eba8467281481800, type: 3}
+      propertyPath: m_NoValidHitProperties.m_EndWidth
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6288467125497789300, guid: b200f6587d118224eba8467281481800, type: 3}
+      propertyPath: m_NoValidHitProperties.m_StartWidth
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8144063156676688850, guid: b200f6587d118224eba8467281481800, type: 3}
       propertyPath: m_Layer
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8229381180640938747, guid: b200f6587d118224eba8467281481800, type: 3}
+      propertyPath: m_CastDistance
+      value: 20
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

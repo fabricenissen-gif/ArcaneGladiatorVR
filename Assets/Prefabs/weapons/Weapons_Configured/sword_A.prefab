@@ -198,6 +198,7 @@ GameObject:
   - component: {fileID: 8099578433088712333}
   - component: {fileID: 543103295907372220}
   - component: {fileID: 3866978691933145277}
+  - component: {fileID: 161614391108192924}
   m_Layer: 0
   m_Name: sword_A
   m_TagString: Sword
@@ -615,6 +616,19 @@ MonoBehaviour:
   onChargedHit:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &161614391108192924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1259436196658269480}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20d82a177e724584ba020faa70a29d54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponNearOnlyFilter
+  maxNearDistance: 0.3
 --- !u!1 &2776369822259509937
 GameObject:
   m_ObjectHideFlags: 0
