@@ -2524,7 +2524,6 @@ GameObject:
   - component: {fileID: 3768948304378173094}
   - component: {fileID: 7326232738338870531}
   - component: {fileID: 9066344608708759836}
-  - component: {fileID: 545899974973883815}
   m_Layer: 3
   m_Name: Right Controller
   m_TagString: RightHand
@@ -2698,20 +2697,6 @@ MonoBehaviour:
     m_SingletonActionBindings: []
     m_Flags: 0
 --- !u!114 &9066344608708759836
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7827421600031795342}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 662c39048ac44a949b350202b9e9ba19, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HandItemTracker
-  lineVisual: {fileID: 0}
-  nearFarInteractor: {fileID: 0}
---- !u!114 &545899974973883815
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
