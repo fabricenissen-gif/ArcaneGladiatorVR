@@ -199,6 +199,7 @@ GameObject:
   - component: {fileID: 543103295907372220}
   - component: {fileID: 3866978691933145277}
   - component: {fileID: 3778033328294092020}
+  - component: {fileID: 1410126643929884010}
   m_Layer: 0
   m_Name: sword_A
   m_TagString: Sword
@@ -356,6 +357,7 @@ MonoBehaviour:
   trackedWeaponTransform: {fileID: 1887494369031067538}
   weaponSweepDamage: {fileID: 440298627880839078}
   weaponThrowAssist: {fileID: 543103295907372220}
+  combatEvents: {fileID: 0}
   swingSpeedThreshold: 1.75
   resetSpeedThreshold: 1.7
   minTimeBetweenSwings: 0.6
@@ -385,6 +387,8 @@ MonoBehaviour:
   - {fileID: 7749140849048248567}
   hitFeedback: {fileID: 651238876653322362}
   chargeSystem: {fileID: 3866978691933145277}
+  combatEvents: {fileID: 0}
+  swingDetector: {fileID: 0}
   sampleRadius: 0.14
   bladeHalfWidth: 0.035
   enemyLayers:
@@ -631,6 +635,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponCombatEvents
   logEvents: 1
+--- !u!114 &1410126643929884010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1259436196658269480}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bb4d04e1de0b71428770ea852007488, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BloodletterModifier
+  bleedDuration: 4
+  applyOnThrowHit: 0
+  logApplications: 1
 --- !u!1 &2776369822259509937
 GameObject:
   m_ObjectHideFlags: 0

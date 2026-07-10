@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7858375627d6b34d8cca669606cf48e, type: 3}
   m_Name: SpellLoadout
   m_EditorClassIdentifier: Assembly-CSharp::SpellLoadoutData
-  buildASpell: {fileID: 11400000, guid: 072e7f1da243f9b48b85bd0da4c440f6, type: 2}
+  buildASpell: {fileID: 11400000, guid: d4a4f11387b653f40b57753d262f6967, type: 2}
   buildBSpell: {fileID: 11400000, guid: 1b97111bf419d334e8bbdd566c328a76, type: 2}

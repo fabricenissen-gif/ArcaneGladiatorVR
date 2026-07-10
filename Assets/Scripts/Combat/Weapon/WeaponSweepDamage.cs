@@ -30,7 +30,8 @@ public class WeaponSweepDamage : MonoBehaviour
 
     [HideInInspector] public bool isFlying;
 
-    private readonly HashSet<Health> hitThisWindow = new HashSet<Health>();
+    private readonly HashSet<Health> hitThisWindow =
+        new HashSet<Health>();
 
     private Rigidbody rb;
     private Vector3[] lastPositions;
@@ -51,8 +52,9 @@ public class WeaponSweepDamage : MonoBehaviour
         if (combatEvents == null)
         {
             Debug.LogWarning(
-                $"[WeaponSweepDamage] '{name}' has no WeaponCombatEvents component. " +
-                "Damage still works, but ON_HIT and ON_THROW_HIT are not published.");
+                $"[WeaponSweepDamage] '{name}' has no " +
+                "WeaponCombatEvents component. Damage still works, " +
+                "but ON_HIT and ON_THROW_HIT are not published.");
         }
     }
 
@@ -166,7 +168,9 @@ public class WeaponSweepDamage : MonoBehaviour
         if (collider == null)
             return;
 
-        float speed = rb != null ? rb.linearVelocity.magnitude : 0f;
+        float speed = rb != null
+            ? rb.linearVelocity.magnitude
+            : 0f;
 
         if (speed < minThrowDamageVelocity)
             return;
@@ -198,6 +202,25 @@ public class WeaponSweepDamage : MonoBehaviour
         if (isExposed)
             finalDamage *= reactions.ExposedMultiplier;
 
+        // Basis-Schaden vor ON_THROW_HIT.
+        if (isExposed)
+            health.TakeDamageReaction(finalDamage, hitDirection, true);
+        else
+            health.TakeDamage(finalDamage, hitDirection);
+
+        hitFeedback?.PlayHitFeedback(hitPoint, hitDirection);
+
+        // Ein tödlicher Basis-Wurf darf keine Statusmodifier auslösen.
+        if (health.IsDead)
+        {
+            Debug.Log(
+                $"[WeaponSweepDamage] THROW killed {health.name} | " +
+                $"DMG:{finalDamage:F1} charged:{wasCharged} " +
+                $"exposed:{isExposed}");
+
+            return;
+        }
+
         combatEvents?.RaiseThrowHit(
             health,
             collider,
@@ -206,11 +229,6 @@ public class WeaponSweepDamage : MonoBehaviour
             finalDamage,
             speed,
             wasCharged);
-
-        if (isExposed)
-            health.TakeDamageReaction(finalDamage, hitDirection, true);
-        else
-            health.TakeDamage(finalDamage, hitDirection);
 
         if (wasCharged && activeChargeSystem != null)
         {
@@ -225,7 +243,10 @@ public class WeaponSweepDamage : MonoBehaviour
             activeChargeSystem.ExpendCharge();
         }
 
-        hitFeedback?.PlayHitFeedback(hitPoint, hitDirection);
+        Debug.Log(
+            $"[WeaponSweepDamage] THROW Hit {health.name} | " +
+            $"DMG:{finalDamage:F1} speed:{speed:F2} " +
+            $"charged:{wasCharged} exposed:{isExposed}");
     }
 
     // ── Attack Window API ─────────────────────────────────────
@@ -306,7 +327,9 @@ public class WeaponSweepDamage : MonoBehaviour
             TryDamage(collider, hitDirection);
     }
 
-    private void TryDamage(Collider collider, Vector3 hitDirection)
+    private void TryDamage(
+        Collider collider,
+        Vector3 hitDirection)
     {
         if (collider == null)
             return;
@@ -316,10 +339,14 @@ public class WeaponSweepDamage : MonoBehaviour
         if (health == null || health.IsDead)
             return;
 
+        // Schutz gegen mehrere Child-Collider, Samples und Overlaps
+        // auf demselben Gegner im selben Attack Window.
         if (!hitThisWindow.Add(health))
             return;
 
-        bool wasCharged = chargeSystem != null && chargeSystem.IsCharged;
+        bool wasCharged =
+            chargeSystem != null &&
+            chargeSystem.IsCharged;
 
         float finalDamage = wasCharged
             ? damage * chargedDamageMultiplier
@@ -335,7 +362,8 @@ public class WeaponSweepDamage : MonoBehaviour
         if (isExposed)
             finalDamage *= reactions.ExposedMultiplier;
 
-        Vector3 hitPoint = collider.ClosestPoint(transform.position);
+        Vector3 hitPoint =
+            collider.ClosestPoint(transform.position);
 
         float swingSpeed = swingDetector != null
             ? swingDetector.CurrentSwingSpeed
@@ -344,6 +372,25 @@ public class WeaponSweepDamage : MonoBehaviour
         int swingId = swingDetector != null
             ? swingDetector.CurrentSwingId
             : 0;
+
+        // Basis-Schaden vor ON_HIT.
+        if (isExposed)
+            health.TakeDamageReaction(finalDamage, hitDirection, true);
+        else
+            health.TakeDamage(finalDamage, hitDirection);
+
+        hitFeedback?.PlayHitFeedback(hitPoint, hitDirection);
+
+        // Ein tödlicher Basis-Hit darf keine Statusmodifier auslösen.
+        if (health.IsDead)
+        {
+            Debug.Log(
+                $"[WeaponSweepDamage] SWING killed {health.name} | " +
+                $"DMG:{finalDamage:F1} charged:{wasCharged} " +
+                $"exposed:{isExposed}");
+
+            return;
+        }
 
         combatEvents?.RaiseHit(
             health,
@@ -354,11 +401,6 @@ public class WeaponSweepDamage : MonoBehaviour
             swingSpeed,
             wasCharged,
             swingId);
-
-        if (isExposed)
-            health.TakeDamageReaction(finalDamage, hitDirection, true);
-        else
-            health.TakeDamage(finalDamage, hitDirection);
 
         if (wasCharged && chargeSystem != null)
         {
@@ -373,11 +415,10 @@ public class WeaponSweepDamage : MonoBehaviour
             chargeSystem.ExpendCharge();
         }
 
-        hitFeedback?.PlayHitFeedback(hitPoint, hitDirection);
-
         Debug.Log(
             $"[WeaponSweepDamage] SWING Hit {health.name} | " +
-            $"DMG:{finalDamage:F1} charged:{wasCharged} exposed:{isExposed}");
+            $"DMG:{finalDamage:F1} charged:{wasCharged} " +
+            $"exposed:{isExposed}");
     }
 
     private bool IsEnemyLayer(int layer)
@@ -395,5 +436,22 @@ public class WeaponSweepDamage : MonoBehaviour
             if (samplePoints[i] != null)
                 lastPositions[i] = samplePoints[i].position;
         }
+    }
+
+    private void OnValidate()
+    {
+        sampleRadius = Mathf.Max(0.001f, sampleRadius);
+        bladeHalfWidth = Mathf.Max(0f, bladeHalfWidth);
+
+        damage = Mathf.Max(0f, damage);
+        chargedDamageMultiplier =
+            Mathf.Max(0f, chargedDamageMultiplier);
+
+        throwBaseDamage = Mathf.Max(0f, throwBaseDamage);
+        throwChargedMultiplier =
+            Mathf.Max(0f, throwChargedMultiplier);
+
+        minThrowDamageVelocity =
+            Mathf.Max(0f, minThrowDamageVelocity);
     }
 }
