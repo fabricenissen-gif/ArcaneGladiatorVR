@@ -2,42 +2,107 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+[DisallowMultipleComponent]
 public class TagHandler : MonoBehaviour
 {
-    [Header("Stack Limits")]
-    [Tooltip("Maximale POISON-Stacks — Standard 3, erweiterbar durch Volatile Stack Modifier")]
-    [SerializeField] private int maxPoisonStacks = 3;
-    [Tooltip("Maximale BLEED-Stacks")]
-    [SerializeField] private int maxBleedStacks = 5;
+    public enum TagChangeType
+    {
+        Applied,
+        Refreshed,
+        Removed,
+        Expired
+    }
 
-    private readonly Dictionary<TagType, TagInstance> activeTags = new Dictionary<TagType, TagInstance>();
+    public readonly struct TagChangeEvent
+    {
+        public TagType TagType { get; }
+        public TagInstance Instance { get; }
+        public TagChangeType ChangeType { get; }
+
+        public TagChangeEvent(
+            TagType tagType,
+            TagInstance instance,
+            TagChangeType changeType)
+        {
+            TagType = tagType;
+            Instance = instance;
+            ChangeType = changeType;
+        }
+    }
+
+    [Header("Stack Limits")]
+    [Tooltip(
+        "Maximale POISON-Stacks. Kann später durch Modifier erweitert werden.")]
+    [SerializeField, Min(1)] private int maxPoisonStacks = 3;
+
+    [Tooltip(
+        "Maximale BLEED-Stacks. Kann später durch Modifier erweitert werden.")]
+    [SerializeField, Min(1)] private int maxBleedStacks = 5;
+
+    private readonly Dictionary<TagType, TagInstance> activeTags =
+        new Dictionary<TagType, TagInstance>();
 
     public event Action<TagType, TagInstance> OnTagApplied;
     public event Action<TagType, TagInstance> OnTagRefreshed;
     public event Action<TagType> OnTagExpired;
     public event Action<TagType> OnTagRemoved;
 
+    public event Action<TagChangeEvent> OnTagChanged;
+
+    private void OnValidate()
+    {
+        maxPoisonStacks = Mathf.Max(1, maxPoisonStacks);
+        maxBleedStacks = Mathf.Max(1, maxBleedStacks);
+    }
+
     private void Update()
     {
         TickTags();
     }
 
-    // --- Public API ---
+    // ── Public API ─────────────────────────────────────────────
 
     public void ApplyTag(TagType type, float duration)
     {
-        if (activeTags.TryGetValue(type, out TagInstance existing))
+        ApplyTag(type, duration, TagApplicationContext.Unknown);
+    }
+
+    public void ApplyTag(
+        TagType type,
+        float duration,
+        TagApplicationContext context)
+    {
+        if (type == TagType.NONE)
         {
-            HandleExistingTag(type, existing, duration);
+            Debug.LogWarning(
+                $"[TagHandler] '{gameObject.name}' tried to apply TagType.NONE. " +
+                "The request was ignored.");
+
             return;
         }
 
-        TagInstance newTag = new TagInstance(type, duration);
-        activeTags[type] = newTag;
+        float safeDuration = Mathf.Max(0f, duration);
+
+        if (activeTags.TryGetValue(type, out TagInstance existing))
+        {
+            RefreshExistingTag(type, existing, safeDuration, context);
+            return;
+        }
+
+        TagInstance newTag = new TagInstance(
+            type,
+            safeDuration,
+            context);
+
+        activeTags.Add(type, newTag);
 
         OnTagApplied?.Invoke(type, newTag);
+        RaiseTagChanged(type, newTag, TagChangeType.Applied);
 
-        Debug.Log("[TagHandler] " + gameObject.name + " → TAG angewandt: " + type + " (" + duration + "s)");
+        Debug.Log(
+            $"[TagHandler] {gameObject.name} -> TAG applied: {type} " +
+            $"({safeDuration:F2}s) | stacks:{newTag.StackCount} | " +
+            $"source:{FormatSource(newTag)}");
     }
 
     public bool HasTag(TagType type)
@@ -56,113 +121,161 @@ public class TagHandler : MonoBehaviour
         return new List<TagType>(activeTags.Keys);
     }
 
-    public void RemoveTag(TagType type)
+    public bool RemoveTag(TagType type)
     {
-        if (!activeTags.ContainsKey(type)) return;
+        if (!activeTags.TryGetValue(type, out TagInstance instance))
+            return false;
 
         activeTags.Remove(type);
-        OnTagRemoved?.Invoke(type);
 
-        Debug.Log("[TagHandler] " + gameObject.name + " → TAG entfernt: " + type);
+        OnTagRemoved?.Invoke(type);
+        RaiseTagChanged(type, instance, TagChangeType.Removed);
+
+        Debug.Log(
+            $"[TagHandler] {gameObject.name} -> TAG removed: {type}");
+
+        return true;
     }
 
     public void RemoveAllTags()
     {
-        List<TagType> keys = new List<TagType>(activeTags.Keys);
+        if (activeTags.Count == 0)
+            return;
 
-        foreach (TagType type in keys)
-        {
-            activeTags.Remove(type);
-            OnTagRemoved?.Invoke(type);
-        }
+        List<TagType> tagsToRemove = new List<TagType>(activeTags.Keys);
 
-        Debug.Log("[TagHandler] " + gameObject.name + " → Alle TAGs entfernt.");
+        foreach (TagType type in tagsToRemove)
+            RemoveTag(type);
+
+        Debug.Log(
+            $"[TagHandler] {gameObject.name} -> All TAGs removed.");
     }
 
-    public void SetMaxPoisonStacks(int max) { maxPoisonStacks = max; }
-    public void SetMaxBleedStacks(int max)  { maxBleedStacks = max; }
+    public void SetMaxPoisonStacks(int max)
+    {
+        maxPoisonStacks = Mathf.Max(1, max);
+    }
 
-    // --- Intern ---
+    public void SetMaxBleedStacks(int max)
+    {
+        maxBleedStacks = Mathf.Max(1, max);
+    }
 
-    private void HandleExistingTag(TagType type, TagInstance existing, float duration)
+    // ── Internal tag behaviour ─────────────────────────────────
+
+    private void RefreshExistingTag(
+        TagType type,
+        TagInstance existing,
+        float duration,
+        TagApplicationContext context)
+    {
+        bool stackAdded = false;
+
+        switch (type)
+        {
+            case TagType.POISON:
+                stackAdded = TryAddStack(existing, maxPoisonStacks);
+                break;
+
+            case TagType.BLEED:
+                stackAdded = TryAddStack(existing, maxBleedStacks);
+                break;
+        }
+
+        existing.Refresh(duration, context);
+
+        OnTagRefreshed?.Invoke(type, existing);
+        RaiseTagChanged(type, existing, TagChangeType.Refreshed);
+
+        string changeDescription = stackAdded
+            ? $"stack {existing.StackCount}/{GetStackLimit(type)}"
+            : $"refreshed ({duration:F2}s)";
+
+        Debug.Log(
+            $"[TagHandler] {gameObject.name} -> {type} {changeDescription} | " +
+            $"source:{FormatSource(existing)}");
+    }
+
+    private bool TryAddStack(TagInstance instance, int maxStacks)
+    {
+        if (instance.StackCount >= maxStacks)
+            return false;
+
+        instance.AddStack();
+        return true;
+    }
+
+    private int GetStackLimit(TagType type)
     {
         switch (type)
         {
             case TagType.POISON:
-                if (existing.StackCount < maxPoisonStacks)
-                {
-                    existing.AddStack();
-                    existing.Refresh(duration);
-                    OnTagRefreshed?.Invoke(type, existing);
-                    Debug.Log("[TagHandler] " + gameObject.name + " → POISON Stack " + existing.StackCount + "/" + maxPoisonStacks);
-                }
-                else
-                {
-                    existing.Refresh(duration);
-                    Debug.Log("[TagHandler] " + gameObject.name + " → POISON max Stacks, nur Refresh");
-                }
-                break;
+                return maxPoisonStacks;
 
             case TagType.BLEED:
-                if (existing.StackCount < maxBleedStacks)
-                {
-                    existing.AddStack();
-                    existing.Refresh(duration);
-                    OnTagRefreshed?.Invoke(type, existing);
-                    Debug.Log("[TagHandler] " + gameObject.name + " → BLEED Stack " + existing.StackCount + "/" + maxBleedStacks);
-                }
-                else
-                {
-                    existing.Refresh(duration);
-                    Debug.Log("[TagHandler] " + gameObject.name + " → BLEED max Stacks, nur Refresh");
-                }
-                break;
-
-            case TagType.FROST:
-            case TagType.FIRE:
-            case TagType.ELECTRIC:
-            case TagType.WIND:
-            case TagType.ARCANE:
-            case TagType.MARKED:
-            case TagType.FROZEN:
-                existing.Refresh(duration);
-                OnTagRefreshed?.Invoke(type, existing);
-                Debug.Log("[TagHandler] " + gameObject.name + " → " + type + " refreshed (" + duration + "s)");
-                break;
+                return maxBleedStacks;
 
             default:
-                existing.Refresh(duration);
-                OnTagRefreshed?.Invoke(type, existing);
-                break;
+                return 1;
         }
     }
 
     private void TickTags()
     {
-        if (activeTags.Count == 0) return;
+        if (activeTags.Count == 0)
+            return;
 
-        List<TagType> expired = null;
+        List<TagType> expiredTags = null;
 
         foreach (KeyValuePair<TagType, TagInstance> pair in activeTags)
         {
-            pair.Value.Tick(Time.deltaTime);
+            TagInstance instance = pair.Value;
+            instance.Tick(Time.deltaTime);
 
-            if (pair.Value.IsExpired)
-            {
-                if (expired == null)
-                    expired = new List<TagType>();
+            if (!instance.IsExpired)
+                continue;
 
-                expired.Add(pair.Key);
-            }
+            if (expiredTags == null)
+                expiredTags = new List<TagType>();
+
+            expiredTags.Add(pair.Key);
         }
 
-        if (expired == null) return;
+        if (expiredTags == null)
+            return;
 
-        foreach (TagType type in expired)
+        foreach (TagType type in expiredTags)
         {
+            if (!activeTags.TryGetValue(type, out TagInstance instance))
+                continue;
+
             activeTags.Remove(type);
+
             OnTagExpired?.Invoke(type);
-            Debug.Log("[TagHandler] " + gameObject.name + " → TAG abgelaufen: " + type);
+            RaiseTagChanged(type, instance, TagChangeType.Expired);
+
+            Debug.Log(
+                $"[TagHandler] {gameObject.name} -> TAG expired: {type}");
         }
+    }
+
+    private void RaiseTagChanged(
+        TagType type,
+        TagInstance instance,
+        TagChangeType changeType)
+    {
+        OnTagChanged?.Invoke(
+            new TagChangeEvent(type, instance, changeType));
+    }
+
+    private static string FormatSource(TagInstance instance)
+    {
+        if (instance == null)
+            return "none";
+
+        if (string.IsNullOrWhiteSpace(instance.SourceId))
+            return instance.SourceCategory.ToString();
+
+        return $"{instance.SourceCategory}:{instance.SourceId}";
     }
 }
