@@ -1,9 +1,10 @@
 using UnityEngine;
 
 /// <summary>
-/// Projektil das Tags appliziert und Exposed-Bonus nutzt.
-/// Initialize() MUSS direkt nach Instantiate() aufgerufen werden.
-/// Tag wird NACH dem Schaden appliziert — verhindert self-trigger.
+/// Projektil für direkten Spell-Schaden und optionale Tag-Anwendung.
+/// Initialize() muss direkt nach Instantiate() aufgerufen werden.
+/// Der Tag wird erst nach dem direkten Schaden angewandt, damit das
+/// neue Tag nicht den Schaden desselben Projektils beeinflussen kann.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(SphereCollider))]
@@ -11,94 +12,194 @@ public class ArcaneBoltProjectile : MonoBehaviour
 {
     [Header("Impact")]
     [SerializeField] private ParticleSystem impactVfxPrefab;
-    [SerializeField] private LayerMask      hitLayers;
+    [SerializeField] private LayerMask hitLayers;
 
-    private float   damage;
-    private float   speed;
-    private float   lifetime;
-    private TagType spellTag    = TagType.ARCANE;
-    private float   tagDuration = 3f;
-    private bool    applyTag    = true;
-    private bool    hasHit      = false;
+    private float damage;
+    private float speed;
+    private float lifetime;
+
+    private TagType spellTag = TagType.ARCANE;
+    private float tagDuration = 3f;
+    private bool applyTag;
+    private bool hasHit;
+
+    private TagApplicationContext tagContext =
+        TagApplicationContext.Unknown;
 
     private Rigidbody rb;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.useGravity             = false;
-        rb.interpolation          = RigidbodyInterpolation.Interpolate;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        rb.useGravity = false;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode =
+            CollisionDetectionMode.ContinuousDynamic;
 
-        GetComponent<SphereCollider>().isTrigger = true;
+        SphereCollider sphereCollider = GetComponent<SphereCollider>();
+        sphereCollider.isTrigger = true;
     }
 
-    /// Ohne Tag — reines Schadensgeschoss (weiße Zahl)
-    public void Initialize(float damage, float speed, float lifetime)
+    /// <summary>
+    /// Reines Schadensprojektil ohne Tag.
+    /// </summary>
+    public void Initialize(
+        float damage,
+        float speed,
+        float lifetime)
     {
-        this.damage   = damage;
-        this.speed    = speed;
-        this.lifetime = lifetime;
-        this.applyTag = false;
+        this.damage = Mathf.Max(0f, damage);
+        this.speed = Mathf.Max(0f, speed);
+        this.lifetime = Mathf.Max(0f, lifetime);
+
+        spellTag = TagType.NONE;
+        tagDuration = 0f;
+        applyTag = false;
+        tagContext = TagApplicationContext.Unknown;
+
         Launch();
     }
 
-    /// Mit Tag — appliziert Tag UND prüft Exposed
-    public void Initialize(float damage, float speed, float lifetime, TagType tag, float tagDuration)
+    /// <summary>
+    /// Kompatibler Tag-Projektilpfad ohne bekannte Quelle.
+    /// Bestehende externe Aufrufer bleiben dadurch funktionsfähig.
+    /// </summary>
+    public void Initialize(
+        float damage,
+        float speed,
+        float lifetime,
+        TagType tag,
+        float tagDuration)
     {
-        this.damage      = damage;
-        this.speed       = speed;
-        this.lifetime    = lifetime;
-        this.spellTag    = tag;
-        this.tagDuration = tagDuration;
-        this.applyTag    = true;
+        Initialize(
+            damage,
+            speed,
+            lifetime,
+            tag,
+            tagDuration,
+            TagApplicationContext.Unknown);
+    }
+
+    /// <summary>
+    /// Tag-Projektil mit nachvollziehbarer Quelle.
+    /// </summary>
+    public void Initialize(
+        float damage,
+        float speed,
+        float lifetime,
+        TagType tag,
+        float tagDuration,
+        TagApplicationContext context)
+    {
+        this.damage = Mathf.Max(0f, damage);
+        this.speed = Mathf.Max(0f, speed);
+        this.lifetime = Mathf.Max(0f, lifetime);
+
+        spellTag = tag;
+        this.tagDuration = Mathf.Max(0f, tagDuration);
+        applyTag = tag != TagType.NONE;
+        tagContext = context;
+
         Launch();
     }
 
     private void Launch()
     {
+        if (rb == null)
+        {
+            Debug.LogError(
+                $"[ArcaneBoltProjectile] Rigidbody missing on " +
+                $"'{gameObject.name}'.");
+
+            Destroy(gameObject);
+            return;
+        }
+
         rb.linearVelocity = transform.forward * speed;
         Destroy(gameObject, lifetime);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (hasHit) return;
-        if ((hitLayers.value & (1 << other.gameObject.layer)) == 0) return;
+        if (hasHit || other == null)
+            return;
+
+        int otherLayerMask = 1 << other.gameObject.layer;
+
+        if ((hitLayers.value & otherLayerMask) == 0)
+            return;
 
         hasHit = true;
 
         Health health = other.GetComponentInParent<Health>();
-        if (health != null)
-        {
-            Vector3 hitDir = transform.forward;
 
-            // Exposed ZUERST prüfen — bevor der Tag appliziert wird
-            TagReactionSystem reactions = other.GetComponentInParent<TagReactionSystem>();
-            bool  isExposed   = reactions != null && reactions.ConsumeExposedModifier();
+        if (health != null && !health.IsDead)
+        {
+            Vector3 hitDirection = transform.forward;
+
+            TagReactionSystem reactions =
+                other.GetComponentInParent<TagReactionSystem>();
+
+            bool isExposed =
+                reactions != null &&
+                reactions.ConsumeExposedModifier();
+
             float finalDamage = isExposed
-                ? damage * (reactions?.ExposedMultiplier ?? 2f)
+                ? damage * reactions.ExposedMultiplier
                 : damage;
 
             if (isExposed)
             {
-                Debug.Log($"[ArcaneBolt] EXPOSED hit! DMG:{finalDamage:F1}");
-                health.TakeDamageReaction(finalDamage, hitDir, true);
+                Debug.Log(
+                    $"[ArcaneBoltProjectile] EXPOSED hit | " +
+                    $"damage:{finalDamage:F1}");
+
+                health.TakeDamageReaction(
+                    finalDamage,
+                    hitDirection,
+                    isExposed: true);
+            }
+            else if (applyTag)
+            {
+                health.TakeDamageTagged(
+                    finalDamage,
+                    hitDirection,
+                    spellTag);
             }
             else
             {
-                // Tagged → farbige Zahl (lila für Arcane), kein Reaction-Bonus
-                health.TakeDamageTagged(finalDamage, hitDir, spellTag);
+                health.TakeDamage(
+                    finalDamage,
+                    hitDirection);
             }
         }
 
-        // Tag NACH dem Schaden — verhindert dass neuer Tag sofort eine Reaction triggert
+        // Der Tag kommt bewusst nach dem direkten Treffer.
         if (applyTag)
-            other.GetComponentInParent<TagHandler>()?.ApplyTag(spellTag, tagDuration);
+        {
+            TagHandler tagHandler =
+                other.GetComponentInParent<TagHandler>();
 
-        if (impactVfxPrefab != null)
-            Destroy(Instantiate(impactVfxPrefab, transform.position, Quaternion.identity).gameObject, 3f);
+            tagHandler?.ApplyTag(
+                spellTag,
+                tagDuration,
+                tagContext);
+        }
 
+        SpawnImpactVfx();
         Destroy(gameObject);
+    }
+
+    private void SpawnImpactVfx()
+    {
+        if (impactVfxPrefab == null)
+            return;
+
+        ParticleSystem impactVfx = Instantiate(
+            impactVfxPrefab,
+            transform.position,
+            Quaternion.identity);
+
+        Destroy(impactVfx.gameObject, 3f);
     }
 }

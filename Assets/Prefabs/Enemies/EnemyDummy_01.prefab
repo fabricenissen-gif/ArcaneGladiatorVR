@@ -342,6 +342,7 @@ GameObject:
   - component: {fileID: -7921727602571591331}
   - component: {fileID: 4802271418095003887}
   - component: {fileID: -5237814640695857871}
+  - component: {fileID: 692803081287585808}
   m_Layer: 6
   m_Name: EnemyDummy_01
   m_TagString: Untagged
@@ -598,8 +599,6 @@ MonoBehaviour:
   thunderstrikeChainRange: 5
   lightningEffectPrefab: {fileID: 4867871391207819812, guid: 325138a74ce5e5c42b1c5cc074c41e8c, type: 3}
   chainedElectricDuration: 3
-  shockBleedDamagePerBleedStack: 8
-  cauterizeDamage: 22
   exposedDuration: 5
   exposedDamageMultiplier: 2
   toxicFumesDuration: 4
@@ -608,6 +607,7 @@ MonoBehaviour:
   enemyLayerMask:
     serializedVersion: 2
     m_Bits: 64
+  logReactions: 1
 --- !u!114 &5799937918017311300
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -709,3 +709,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a79dec018312814a9f0afed5b0aee44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PoisonTagHandler
+--- !u!114 &692803081287585808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9108634127881482417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 978ef7f9a0adcba4c9ef2f0f4a143cb0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BleedTagHandler
+  damagePerStackPerTick: 1
+  tickInterval: 1
+  logTicks: 1
