@@ -1,58 +1,76 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[DisallowMultipleComponent]
 public class WeaponSweepDamage : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private Transform[]        samplePoints;
-    [SerializeField] private WeaponHitFeedback  hitFeedback;
+    [SerializeField] private Transform[] samplePoints;
+    [SerializeField] private WeaponHitFeedback hitFeedback;
     [SerializeField] private WeaponChargeSystem chargeSystem;
+    [SerializeField] private WeaponCombatEvents combatEvents;
+    [SerializeField] private WeaponSwingDetector swingDetector;
 
     [Header("Hit Detection")]
-    [SerializeField] private float     sampleRadius   = 0.14f;
-    [SerializeField] private float     bladeHalfWidth = 0.035f;
+    [SerializeField, Min(0.001f)] private float sampleRadius = 0.14f;
+    [SerializeField, Min(0f)] private float bladeHalfWidth = 0.035f;
     [SerializeField] private LayerMask enemyLayers;
 
-    [Header("Damage — Swing")]
-    [SerializeField] private float damage                  = 20f;
-    [SerializeField] private float chargedDamageMultiplier = 2f;
+    [Header("Damage - Swing")]
+    [SerializeField, Min(0f)] private float damage = 20f;
+    [SerializeField, Min(0f)] private float chargedDamageMultiplier = 2f;
 
-    [Header("Damage — Throw")]
-    [SerializeField] private float throwBaseDamage        = 25f;
-    [SerializeField] private float throwChargedMultiplier = 2.5f;
-    [SerializeField] private float minThrowDamageVelocity = 4f;
+    [Header("Damage - Throw")]
+    [SerializeField, Min(0f)] private float throwBaseDamage = 25f;
+    [SerializeField, Min(0f)] private float throwChargedMultiplier = 2.5f;
+    [SerializeField, Min(0f)] private float minThrowDamageVelocity = 4f;
 
     [Header("Attack Window")]
-    [SerializeField] private bool attackWindowActive = false;
+    [SerializeField] private bool attackWindowActive;
 
-    [HideInInspector] public bool isFlying = false;
+    [HideInInspector] public bool isFlying;
 
-    private Rigidbody       rb;
-    private Vector3[]       lastPositions;
-    private HashSet<Health> hitThisWindow = new HashSet<Health>();
+    private readonly HashSet<Health> hitThisWindow = new HashSet<Health>();
 
-    // ── Lifecycle ─────────────────────────────────────────────
+    private Rigidbody rb;
+    private Vector3[] lastPositions;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+
         if (chargeSystem == null)
             chargeSystem = GetComponent<WeaponChargeSystem>();
+
+        if (combatEvents == null)
+            combatEvents = GetComponent<WeaponCombatEvents>();
+
+        if (swingDetector == null)
+            swingDetector = GetComponent<WeaponSwingDetector>();
+
+        if (combatEvents == null)
+        {
+            Debug.LogWarning(
+                $"[WeaponSweepDamage] '{name}' has no WeaponCombatEvents component. " +
+                "Damage still works, but ON_HIT and ON_THROW_HIT are not published.");
+        }
     }
 
     private void Start()
     {
         if (samplePoints == null || samplePoints.Length == 0)
         {
-            Debug.LogWarning("[WeaponSweepDamage] Keine SamplePoints gesetzt!");
+            Debug.LogWarning(
+                $"[WeaponSweepDamage] '{name}' has no Sample Points. " +
+                "Melee hit detection was disabled.");
+
             enabled = false;
             return;
         }
+
         lastPositions = new Vector3[samplePoints.Length];
         SnapLastPositions();
     }
-
-    // ── Swing Detection ───────────────────────────────────────
 
     private void Update()
     {
@@ -66,94 +84,148 @@ public class WeaponSweepDamage : MonoBehaviour
 
         for (int i = 0; i < samplePoints.Length; i++)
         {
-            Transform pt = samplePoints[i];
-            if (pt == null) continue;
+            Transform samplePoint = samplePoints[i];
 
-            Vector3 cur       = pt.position;
-            Vector3 prev      = lastPositions[i];
-            Vector3 delta     = cur - prev;
-            Vector3 hitDir    = delta.sqrMagnitude > 0.0001f ? delta.normalized : transform.forward;
-            Vector3 bladeAxis = pt.right;
+            if (samplePoint == null)
+                continue;
 
-            CheckTrack(prev,                              cur,                              hitDir, sampleRadius);
-            CheckTrack(prev - bladeAxis * bladeHalfWidth, cur - bladeAxis * bladeHalfWidth, hitDir, sampleRadius);
-            CheckTrack(prev + bladeAxis * bladeHalfWidth, cur + bladeAxis * bladeHalfWidth, hitDir, sampleRadius);
+            Vector3 currentPosition = samplePoint.position;
+            Vector3 previousPosition = lastPositions[i];
+            Vector3 delta = currentPosition - previousPosition;
 
-            lastPositions[i] = cur;
+            Vector3 hitDirection = delta.sqrMagnitude > 0.0001f
+                ? delta.normalized
+                : transform.forward;
+
+            Vector3 bladeAxis = samplePoint.right;
+
+            CheckTrack(
+                previousPosition,
+                currentPosition,
+                hitDirection,
+                sampleRadius);
+
+            CheckTrack(
+                previousPosition - bladeAxis * bladeHalfWidth,
+                currentPosition - bladeAxis * bladeHalfWidth,
+                hitDirection,
+                sampleRadius);
+
+            CheckTrack(
+                previousPosition + bladeAxis * bladeHalfWidth,
+                currentPosition + bladeAxis * bladeHalfWidth,
+                hitDirection,
+                sampleRadius);
+
+            lastPositions[i] = currentPosition;
         }
     }
 
     // ── Throw Damage ──────────────────────────────────────────
 
-    // Aufgerufen via RaycastHit (SphereCast-Pfad)
-    public void HandleThrowHit(RaycastHit hit, bool wasCharged, WeaponChargeSystem throwChargeSystem)
+    public void HandleThrowHit(
+        RaycastHit hit,
+        bool wasCharged,
+        WeaponChargeSystem throwChargeSystem)
     {
-        Vector3 hitDir   = rb != null && rb.linearVelocity.sqrMagnitude > 0.001f
-            ? rb.linearVelocity.normalized : transform.forward;
-        HandleThrowDamage(hit.collider, hit.point, hitDir, wasCharged, throwChargeSystem);
+        Vector3 hitDirection = rb != null &&
+                               rb.linearVelocity.sqrMagnitude > 0.001f
+            ? rb.linearVelocity.normalized
+            : transform.forward;
+
+        HandleThrowDamage(
+            hit.collider,
+            hit.point,
+            hitDirection,
+            wasCharged,
+            throwChargeSystem);
     }
 
-    // Aufgerufen via OverlapSphere-Fallback
-    public void HandleThrowHitDirect(Collider col, Vector3 hitPoint, Vector3 hitDir,
-        bool wasCharged, WeaponChargeSystem throwChargeSystem)
+    public void HandleThrowHitDirect(
+        Collider collider,
+        Vector3 hitPoint,
+        Vector3 hitDirection,
+        bool wasCharged,
+        WeaponChargeSystem throwChargeSystem)
     {
-        HandleThrowDamage(col, hitPoint, hitDir, wasCharged, throwChargeSystem);
+        HandleThrowDamage(
+            collider,
+            hitPoint,
+            hitDirection,
+            wasCharged,
+            throwChargeSystem);
     }
 
-    private void HandleThrowDamage(Collider col, Vector3 hitPoint, Vector3 hitDir,
-        bool wasCharged, WeaponChargeSystem throwChargeSystem)
+    private void HandleThrowDamage(
+        Collider collider,
+        Vector3 hitPoint,
+        Vector3 hitDirection,
+        bool wasCharged,
+        WeaponChargeSystem throwChargeSystem)
     {
-        float  vel           = rb != null ? rb.linearVelocity.magnitude : 0f;
-        int    layer         = col.gameObject.layer;
-        bool   enemyLayerHit = (enemyLayers.value & (1 << layer)) != 0;
-        Health health        = col.GetComponentInParent<Health>();
-
-        Debug.Log($"[WeaponSweepDamage] HandleThrowDamage — " +
-                  $"vel:{vel:F2} (min:{minThrowDamageVelocity}) | " +
-                  $"layer:{LayerMask.LayerToName(layer)}({layer}) | " +
-                  $"enemyLayerHit:{enemyLayerHit} | health:{health != null} | " +
-                  $"wasCharged:{wasCharged}");
-
-        if (vel < minThrowDamageVelocity)
-        {
-            Debug.Log("[WeaponSweepDamage] ABORTED — velocity zu niedrig.");
+        if (collider == null)
             return;
-        }
-        if (!enemyLayerHit)
-        {
-            Debug.Log("[WeaponSweepDamage] ABORTED — Layer nicht in enemyLayers.");
+
+        float speed = rb != null ? rb.linearVelocity.magnitude : 0f;
+
+        if (speed < minThrowDamageVelocity)
             return;
-        }
-        if (health == null)
-        {
-            Debug.Log("[WeaponSweepDamage] ABORTED — kein Health Component.");
+
+        if (!IsEnemyLayer(collider.gameObject.layer))
             return;
-        }
 
-        WeaponChargeSystem cs = throwChargeSystem != null ? throwChargeSystem : chargeSystem;
-        float finalDamage     = wasCharged ? throwBaseDamage * throwChargedMultiplier : throwBaseDamage;
+        Health health = collider.GetComponentInParent<Health>();
 
-        TagReactionSystem reactions = col.GetComponentInParent<TagReactionSystem>();
-        bool isExposed = reactions != null && reactions.ConsumeExposedModifier();
-        if (isExposed) finalDamage *= reactions.ExposedMultiplier;
+        if (health == null || health.IsDead)
+            return;
 
-        Debug.Log($"[WeaponSweepDamage] THROW DAMAGE — base:{throwBaseDamage} " +
-                  $"final:{finalDamage:F1} wasCharged:{wasCharged} exposed:{isExposed}");
+        WeaponChargeSystem activeChargeSystem =
+            throwChargeSystem != null
+                ? throwChargeSystem
+                : chargeSystem;
+
+        float finalDamage = wasCharged
+            ? throwBaseDamage * throwChargedMultiplier
+            : throwBaseDamage;
+
+        TagReactionSystem reactions =
+            collider.GetComponentInParent<TagReactionSystem>();
+
+        bool isExposed =
+            reactions != null &&
+            reactions.ConsumeExposedModifier();
 
         if (isExposed)
-            health.TakeDamageReaction(finalDamage, hitDir, true);
-        else
-            health.TakeDamage(finalDamage, hitDir);
+            finalDamage *= reactions.ExposedMultiplier;
 
-        if (wasCharged && cs != null)
+        combatEvents?.RaiseThrowHit(
+            health,
+            collider,
+            hitPoint,
+            hitDirection,
+            finalDamage,
+            speed,
+            wasCharged);
+
+        if (isExposed)
+            health.TakeDamageReaction(finalDamage, hitDirection, true);
+        else
+            health.TakeDamage(finalDamage, hitDirection);
+
+        if (wasCharged && activeChargeSystem != null)
         {
-            cs.NotifyChargedHit(health, col, hitDir, hitPoint,
-                throwBaseDamage, finalDamage);
-            cs.ExpendCharge();
+            activeChargeSystem.NotifyChargedHit(
+                health,
+                collider,
+                hitDirection,
+                hitPoint,
+                throwBaseDamage,
+                finalDamage);
+
+            activeChargeSystem.ExpendCharge();
         }
 
-        if (hitFeedback != null)
-            hitFeedback.PlayHitFeedback(hitPoint, hitDir);
+        hitFeedback?.PlayHitFeedback(hitPoint, hitDirection);
     }
 
     // ── Attack Window API ─────────────────────────────────────
@@ -163,6 +235,7 @@ public class WeaponSweepDamage : MonoBehaviour
         attackWindowActive = true;
         hitThisWindow.Clear();
         SnapLastPositions();
+
         Debug.Log("[WeaponSweepDamage] AttackWindow BEGIN");
     }
 
@@ -171,74 +244,156 @@ public class WeaponSweepDamage : MonoBehaviour
         attackWindowActive = false;
         hitThisWindow.Clear();
         SnapLastPositions();
+
         Debug.Log("[WeaponSweepDamage] AttackWindow END");
     }
 
-    // ── Swing Internals ───────────────────────────────────────
+    // ── Swing Hit Detection ───────────────────────────────────
 
-    private void CheckTrack(Vector3 start, Vector3 end, Vector3 hitDir, float radius)
+    private void CheckTrack(
+        Vector3 start,
+        Vector3 end,
+        Vector3 hitDirection,
+        float radius)
     {
-        Vector3 delta    = end - start;
-        float   distance = delta.magnitude;
+        Vector3 delta = end - start;
+        float distance = delta.magnitude;
 
         if (distance > 0.0001f)
         {
-            RaycastHit[] hits = Physics.SphereCastAll(start, radius, delta.normalized,
-                distance, enemyLayers, QueryTriggerInteraction.Collide);
-            foreach (RaycastHit h in hits) TryDamage(h.collider, hitDir);
+            RaycastHit[] hits = Physics.SphereCastAll(
+                start,
+                radius,
+                delta.normalized,
+                distance,
+                enemyLayers,
+                QueryTriggerInteraction.Collide);
 
-            CheckOverlap(start + delta * 0.25f, hitDir, radius);
-            CheckOverlap(start + delta * 0.5f,  hitDir, radius);
-            CheckOverlap(start + delta * 0.75f, hitDir, radius);
+            foreach (RaycastHit hit in hits)
+                TryDamage(hit.collider, hitDirection);
+
+            CheckOverlap(
+                start + delta * 0.25f,
+                hitDirection,
+                radius);
+
+            CheckOverlap(
+                start + delta * 0.5f,
+                hitDirection,
+                radius);
+
+            CheckOverlap(
+                start + delta * 0.75f,
+                hitDirection,
+                radius);
         }
-        CheckOverlap(end, hitDir, radius);
+
+        CheckOverlap(end, hitDirection, radius);
     }
 
-    private void CheckOverlap(Vector3 pos, Vector3 hitDir, float radius)
+    private void CheckOverlap(
+        Vector3 position,
+        Vector3 hitDirection,
+        float radius)
     {
-        Collider[] cols = Physics.OverlapSphere(pos, radius, enemyLayers,
+        Collider[] colliders = Physics.OverlapSphere(
+            position,
+            radius,
+            enemyLayers,
             QueryTriggerInteraction.Collide);
-        foreach (Collider c in cols) TryDamage(c, hitDir);
+
+        foreach (Collider collider in colliders)
+            TryDamage(collider, hitDirection);
     }
 
-    private void TryDamage(Collider col, Vector3 hitDir)
+    private void TryDamage(Collider collider, Vector3 hitDirection)
     {
-        if (col == null) return;
-        Health health = col.GetComponentInParent<Health>();
-        if (health == null) return;
-        if (!hitThisWindow.Add(health)) return;
+        if (collider == null)
+            return;
 
-        bool  wasCharged  = chargeSystem != null && chargeSystem.IsCharged;
-        float finalDamage = wasCharged ? damage * chargedDamageMultiplier : damage;
+        Health health = collider.GetComponentInParent<Health>();
 
-        TagReactionSystem reactions = col.GetComponentInParent<TagReactionSystem>();
-        bool isExposed = reactions != null && reactions.ConsumeExposedModifier();
-        if (isExposed) finalDamage *= reactions.ExposedMultiplier;
+        if (health == null || health.IsDead)
+            return;
+
+        if (!hitThisWindow.Add(health))
+            return;
+
+        bool wasCharged = chargeSystem != null && chargeSystem.IsCharged;
+
+        float finalDamage = wasCharged
+            ? damage * chargedDamageMultiplier
+            : damage;
+
+        TagReactionSystem reactions =
+            collider.GetComponentInParent<TagReactionSystem>();
+
+        bool isExposed =
+            reactions != null &&
+            reactions.ConsumeExposedModifier();
 
         if (isExposed)
-            health.TakeDamageReaction(finalDamage, hitDir, true);
+            finalDamage *= reactions.ExposedMultiplier;
+
+        Vector3 hitPoint = collider.ClosestPoint(transform.position);
+
+        float swingSpeed = swingDetector != null
+            ? swingDetector.CurrentSwingSpeed
+            : 0f;
+
+        int swingId = swingDetector != null
+            ? swingDetector.CurrentSwingId
+            : 0;
+
+        combatEvents?.RaiseHit(
+            health,
+            collider,
+            hitPoint,
+            hitDirection,
+            finalDamage,
+            swingSpeed,
+            wasCharged,
+            swingId);
+
+        if (isExposed)
+            health.TakeDamageReaction(finalDamage, hitDirection, true);
         else
-            health.TakeDamage(finalDamage, hitDir);
+            health.TakeDamage(finalDamage, hitDirection);
 
         if (wasCharged && chargeSystem != null)
         {
-            Vector3 hitPoint = col.ClosestPoint(transform.position);
-            chargeSystem.NotifyChargedHit(health, col, hitDir, hitPoint, damage, finalDamage);
+            chargeSystem.NotifyChargedHit(
+                health,
+                collider,
+                hitDirection,
+                hitPoint,
+                damage,
+                finalDamage);
+
             chargeSystem.ExpendCharge();
         }
 
-        if (hitFeedback != null)
-            hitFeedback.PlayHitFeedback(col.ClosestPoint(transform.position), hitDir);
+        hitFeedback?.PlayHitFeedback(hitPoint, hitDirection);
 
-        Debug.Log($"[WeaponSweepDamage] SWING Hit {health.name} | " +
-                  $"DMG:{finalDamage:F1} charged:{wasCharged} exposed:{isExposed}");
+        Debug.Log(
+            $"[WeaponSweepDamage] SWING Hit {health.name} | " +
+            $"DMG:{finalDamage:F1} charged:{wasCharged} exposed:{isExposed}");
+    }
+
+    private bool IsEnemyLayer(int layer)
+    {
+        return (enemyLayers.value & (1 << layer)) != 0;
     }
 
     private void SnapLastPositions()
     {
-        if (lastPositions == null) return;
+        if (lastPositions == null)
+            return;
+
         for (int i = 0; i < samplePoints.Length; i++)
+        {
             if (samplePoints[i] != null)
                 lastPositions[i] = samplePoints[i].position;
+        }
     }
 }

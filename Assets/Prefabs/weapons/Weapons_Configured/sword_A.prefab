@@ -198,7 +198,7 @@ GameObject:
   - component: {fileID: 8099578433088712333}
   - component: {fileID: 543103295907372220}
   - component: {fileID: 3866978691933145277}
-  - component: {fileID: 161614391108192924}
+  - component: {fileID: 3778033328294092020}
   m_Layer: 0
   m_Name: sword_A
   m_TagString: Sword
@@ -430,7 +430,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit::UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable
   m_InteractionManager: {fileID: 0}
-  m_Colliders: []
+  m_Colliders:
+  - {fileID: 1471188984083141789}
   m_InteractionLayers:
     m_Bits: 4
   m_DistanceCalculationMode: 1
@@ -507,17 +508,17 @@ MonoBehaviour:
   m_AngularVelocityScale: 1
   m_TrackPosition: 1
   m_SmoothPosition: 1
-  m_SmoothPositionAmount: 14.2
-  m_TightenPosition: 0.3
+  m_SmoothPositionAmount: 6.9
+  m_TightenPosition: 0.632
   m_TrackRotation: 1
   m_SmoothRotation: 1
-  m_SmoothRotationAmount: 14.2
-  m_TightenRotation: 0.3
+  m_SmoothRotationAmount: 6.9
+  m_TightenRotation: 0.621
   m_TrackScale: 1
   m_SmoothScale: 0
   m_SmoothScaleAmount: 8
   m_TightenScale: 0.1
-  m_ThrowOnDetach: 1
+  m_ThrowOnDetach: 0
   m_ThrowSmoothingDuration: 0.25
   m_ThrowSmoothingCurve:
     serializedVersion: 2
@@ -541,9 +542,9 @@ MonoBehaviour:
   m_StartingSingleGrabTransformers: []
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
-  m_FarAttachMode: 0
-  m_LimitLinearVelocity: 0
-  m_LimitAngularVelocity: 0
+  m_FarAttachMode: 1
+  m_LimitLinearVelocity: 1
+  m_LimitAngularVelocity: 1
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
 --- !u!114 &8099578433088712333
@@ -577,6 +578,7 @@ MonoBehaviour:
   chargedThrowSpeedMultiplier: 3
   flightDirectionRef: {fileID: 7271394034984242361}
   throwSpeedMultiplier: 1.3
+  minimumThrowSpeed: 0.5
   dartAlignmentSpeed: 10
   dartGravityScale: 0.6
   dartCenterOfMassOffset: 0.182
@@ -584,7 +586,7 @@ MonoBehaviour:
   stickableLayers:
     serializedVersion: 2
     m_Bits: 256
-  minVelocityToStick: 3
+  minVelocityToStick: 2
   penetrationDepth: 0.2
   flightCastRadius: 0.65
   flightHitLayers:
@@ -616,7 +618,7 @@ MonoBehaviour:
   onChargedHit:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &161614391108192924
+--- !u!114 &3778033328294092020
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -625,10 +627,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1259436196658269480}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 20d82a177e724584ba020faa70a29d54, type: 3}
+  m_Script: {fileID: 11500000, guid: ee57421d780d264438f0d487245fcb47, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WeaponNearOnlyFilter
-  maxNearDistance: 0.3
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponCombatEvents
+  logEvents: 1
 --- !u!1 &2776369822259509937
 GameObject:
   m_ObjectHideFlags: 0

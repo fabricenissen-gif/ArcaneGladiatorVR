@@ -222,7 +222,7 @@ Transform:
   m_GameObject: {fileID: 510666194}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 12.88824, y: -0.5, z: 103.10737}
+  m_LocalPosition: {x: 9.41, y: -0.5, z: 103.10737}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -253,7 +253,7 @@ Transform:
   m_GameObject: {fileID: 660842277}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 12.88824, y: -0.5, z: 103.10737}
+  m_LocalPosition: {x: 15.58, y: -0.5, z: 105.94}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -684,7 +684,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4bb982cf16f4bc4db460f9fa8c1636a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimpleEnemySpawner
-  enemyPrefab: {fileID: 4069515727537450685, guid: e2952e44593caac47bf5a83c0b8cc150, type: 3}
+  enemyPrefab: {fileID: 9108634127881482417, guid: e9521b5a2712af74abd611be89a639b1, type: 3}
   spawnPoints:
   - {fileID: 885256478}
   - {fileID: 660842278}
