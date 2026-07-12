@@ -49,8 +49,9 @@ public sealed class BloodletterModifierDefinition : WeaponModifierDefinition
 /// <summary>
 /// Laufzeitlogik für Bloodletter.
 ///
-/// Abonniert nur bestätigte Treffer-Events. Es gibt keinen eigenen Collider,
-/// keine eigene Sweep-Erkennung und keine eigene Schadenslogik.
+/// Abonniert ausschließlich bestätigte Treffer-Events.
+/// Kein eigener Collider, keine eigene Sweep-Erkennung und keine
+/// eigene Schadenslogik.
 /// </summary>
 public sealed class BloodletterModifierRuntime : WeaponModifierRuntime
 {
@@ -107,8 +108,7 @@ public sealed class BloodletterModifierRuntime : WeaponModifierRuntime
     {
         Health targetHealth = eventData.TargetHealth;
 
-        // Defensiver Guard für zukünftige Eventquellen:
-        // Tote oder bereits zerstörte Ziele bekommen keinen neuen Status.
+        // Schutz für künftige Eventquellen, Despawns und tödliche Treffer.
         if (targetHealth == null || targetHealth.IsDead)
             return;
 
@@ -127,21 +127,39 @@ public sealed class BloodletterModifierRuntime : WeaponModifierRuntime
             return;
         }
 
-        tagHandler.ApplyTag(TagType.BLEED, definition.BleedDuration);
+        // Owner ist die aktive Waffeninstanz, zum Beispiel sword_A.
+        // SourceId dokumentiert eindeutig Modifier und auslösenden Trigger.
+        // Bei einem Stack-Refresh ist bewusst der zuletzt anwendende
+        // Bloodletter-Proc als Quelle im TagInstance-Kontext gespeichert.
+        TagApplicationContext context =
+            TagApplicationContext.FromModifier(
+                Owner,
+                $"{ModifierId}:{triggerName}");
+
+        tagHandler.ApplyTag(
+            TagType.BLEED,
+            definition.BleedDuration,
+            context);
 
         if (!definition.LogApplications)
             return;
 
         TagInstance bleedTag = tagHandler.GetTag(TagType.BLEED);
+
         int stackCount = bleedTag != null
             ? bleedTag.StackCount
             : 0;
+
+        string sourceText = bleedTag != null
+            ? $"{bleedTag.SourceCategory}:{bleedTag.SourceId}"
+            : "None";
 
         Debug.Log(
             $"[Bloodletter] {triggerName} | " +
             $"Target:{targetHealth.name} | " +
             $"BLEED stacks:{stackCount} | " +
             $"Duration:{definition.BleedDuration:F2}s | " +
+            $"Source:{sourceText} | " +
             $"Damage:{eventData.Damage:F1} | " +
             $"Speed:{eventData.Speed:F2} | " +
             $"Charged:{eventData.WasCharged} | " +
