@@ -5,10 +5,6 @@ using UnityEngine;
 ///
 /// Jeder bestätigte Nahkampftreffer wendet BLEED auf das noch lebende
 /// Ziel an. Wurftreffer können optional ebenfalls BLEED anwenden.
-///
-/// Die Laufzeitlogik liegt ausschließlich in BloodletterModifierRuntime.
-/// Dadurch ist der Effekt nur aktiv, solange dieses Asset durch einen
-/// ModifierController ausgerüstet ist.
 /// </summary>
 [CreateAssetMenu(
     fileName = "BloodletterModifier",
@@ -21,9 +17,9 @@ public sealed class BloodletterModifierDefinition : WeaponModifierDefinition
 
     [Header("Trigger")]
     [Tooltip(
-        "Wenn aktiv, wendet ein erfolgreicher Schwertwurf ebenfalls BLEED an. " +
-        "Standardmäßig deaktiviert, damit Bloodletter zunächst nur ON_HIT nutzt.")]
-    [SerializeField] private bool applyOnThrowHit;
+        "Wenn aktiv, wendet ein erfolgreicher Schwertwurf ebenfalls " +
+        "BLEED an.")]
+    [SerializeField] private bool applyOnThrowHit = true;
 
     [Header("Debug")]
     [Tooltip(
@@ -47,13 +43,13 @@ public sealed class BloodletterModifierDefinition : WeaponModifierDefinition
 }
 
 /// <summary>
-/// Laufzeitlogik für Bloodletter.
+/// Runtime für Bloodletter.
 ///
-/// Abonniert ausschließlich bestätigte Treffer-Events.
-/// Kein eigener Collider, keine eigene Sweep-Erkennung und keine
-/// eigene Schadenslogik.
+/// Verwendet TriggeredWeaponModifierRuntime, daher keine manuelle
+/// Event-Subscription- oder Unsubscription-Logik mehr in diesem Modifier.
 /// </summary>
-public sealed class BloodletterModifierRuntime : WeaponModifierRuntime
+public sealed class BloodletterModifierRuntime
+    : TriggeredWeaponModifierRuntime
 {
     private readonly BloodletterModifierDefinition definition;
 
@@ -64,40 +60,36 @@ public sealed class BloodletterModifierRuntime : WeaponModifierRuntime
         this.definition = definition;
     }
 
-    protected override void OnWeaponModifierActivated()
+    protected override bool ListenOnHit => true;
+
+    protected override bool ListenOnThrowHit =>
+        definition.ApplyOnThrowHit;
+
+    protected override void OnWeaponTriggersActivated()
     {
-        CombatEvents.Hit += OnWeaponHit;
+        if (!definition.LogApplications)
+            return;
 
-        if (definition.ApplyOnThrowHit)
-            CombatEvents.ThrowHit += OnWeaponThrowHit;
-
-        if (definition.LogApplications)
-        {
-            Debug.Log(
-                $"[Bloodletter] Activated '{ModifierId}' | " +
-                $"Duration:{definition.BleedDuration:F2}s | " +
-                $"ThrowHit:{definition.ApplyOnThrowHit}");
-        }
+        Debug.Log(
+            $"[Bloodletter] Activated '{ModifierId}' | " +
+            $"Duration:{definition.BleedDuration:F2}s | " +
+            $"ThrowHit:{definition.ApplyOnThrowHit}");
     }
 
-    protected override void OnWeaponModifierDeactivated()
+    protected override void OnWeaponTriggersDeactivating()
     {
-        if (CombatEvents != null)
-        {
-            CombatEvents.Hit -= OnWeaponHit;
-            CombatEvents.ThrowHit -= OnWeaponThrowHit;
-        }
-
         if (definition.LogApplications)
             Debug.Log($"[Bloodletter] Deactivated '{ModifierId}'.");
     }
 
-    private void OnWeaponHit(WeaponCombatEvents.EventData eventData)
+    protected override void OnHit(
+        WeaponCombatEvents.EventData eventData)
     {
         ApplyBleed(eventData, "ON_HIT");
     }
 
-    private void OnWeaponThrowHit(WeaponCombatEvents.EventData eventData)
+    protected override void OnThrowHit(
+        WeaponCombatEvents.EventData eventData)
     {
         ApplyBleed(eventData, "ON_THROW_HIT");
     }
@@ -108,7 +100,8 @@ public sealed class BloodletterModifierRuntime : WeaponModifierRuntime
     {
         Health targetHealth = eventData.TargetHealth;
 
-        // Schutz für künftige Eventquellen, Despawns und tödliche Treffer.
+        // Verhindert Statusanwendungen auf zerstörten, ungültigen
+        // oder durch den Basis-Hit bereits getöteten Gegnern.
         if (targetHealth == null || targetHealth.IsDead)
             return;
 
@@ -127,10 +120,6 @@ public sealed class BloodletterModifierRuntime : WeaponModifierRuntime
             return;
         }
 
-        // Owner ist die aktive Waffeninstanz, zum Beispiel sword_A.
-        // SourceId dokumentiert eindeutig Modifier und auslösenden Trigger.
-        // Bei einem Stack-Refresh ist bewusst der zuletzt anwendende
-        // Bloodletter-Proc als Quelle im TagInstance-Kontext gespeichert.
         TagApplicationContext context =
             TagApplicationContext.FromModifier(
                 Owner,
