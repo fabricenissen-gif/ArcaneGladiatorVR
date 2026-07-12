@@ -199,7 +199,7 @@ GameObject:
   - component: {fileID: 543103295907372220}
   - component: {fileID: 3866978691933145277}
   - component: {fileID: 3778033328294092020}
-  - component: {fileID: 1410126643929884010}
+  - component: {fileID: 6167871960366006917}
   m_Layer: 0
   m_Name: sword_A
   m_TagString: Sword
@@ -635,7 +635,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponCombatEvents
   logEvents: 1
---- !u!114 &1410126643929884010
+--- !u!114 &6167871960366006917
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -644,12 +644,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 1259436196658269480}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9bb4d04e1de0b71428770ea852007488, type: 3}
+  m_Script: {fileID: 11500000, guid: 445bf371c99ef004f83a920a92ef8c91, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BloodletterModifier
-  bleedDuration: 4
-  applyOnThrowHit: 0
-  logApplications: 1
+  m_EditorClassIdentifier: Assembly-CSharp::ModifierController
+  supportedScope: 0
+  maxSlots: 5
+  unlockedSlots: 2
+  startingModifiers:
+  - {fileID: 11400000, guid: 9f42ec45664550b41ad8ef63e8ea858a, type: 2}
+  logLifecycle: 1
 --- !u!1 &2776369822259509937
 GameObject:
   m_ObjectHideFlags: 0
