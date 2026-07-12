@@ -21,12 +21,12 @@ GameObject:
   - component: {fileID: 7756592339700613175}
   - component: {fileID: 4460463581760482288}
   - component: {fileID: -6892782284464582352}
-  - component: {fileID: -5069804677228373791}
   - component: {fileID: 2567567953994836065}
   - component: {fileID: -1812133689773230309}
   - component: {fileID: 5359202046889970102}
   - component: {fileID: 1890923097216572720}
   - component: {fileID: -5425328182272475332}
+  - component: {fileID: -3321883284419666060}
   m_Layer: 6
   m_Name: Swarmer
   m_TagString: Untagged
@@ -311,8 +311,6 @@ MonoBehaviour:
   thunderstrikeChainRange: 5
   lightningEffectPrefab: {fileID: 4867871391207819812, guid: 325138a74ce5e5c42b1c5cc074c41e8c, type: 3}
   chainedElectricDuration: 3
-  shockBleedDamagePerBleedStack: 8
-  cauterizeDamage: 22
   exposedDuration: 5
   exposedDamageMultiplier: 2
   toxicFumesDuration: 4
@@ -321,19 +319,7 @@ MonoBehaviour:
   enemyLayerMask:
     serializedVersion: 2
     m_Bits: 64
---- !u!114 &-5069804677228373791
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4069515727537450685}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 72f0fc37316f50d488e2cede047cb13c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TagVfxIndicator
-  entries: []
+  logReactions: 1
 --- !u!114 &2567567953994836065
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -371,8 +357,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff19e4b2975d90a49a8a43570193d225, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FireTagHandler
-  tickDamage: 2
+  damagePerStackPerTick: 1
   tickInterval: 1
+  logTicks: 0
 --- !u!114 &5359202046889970102
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -410,6 +397,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a79dec018312814a9f0afed5b0aee44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PoisonTagHandler
+  damagePerStackPerTick: 1
+  tickInterval: 1
+  logTicks: 0
+--- !u!114 &-3321883284419666060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4069515727537450685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 978ef7f9a0adcba4c9ef2f0f4a143cb0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BleedTagHandler
+  damagePerStackPerTick: 1
+  tickInterval: 1
+  logTicks: 0
 --- !u!1 &4350451257439855457
 GameObject:
   m_ObjectHideFlags: 0

@@ -25,7 +25,7 @@ GameObject:
   - component: {fileID: 8173753788525360537}
   - component: {fileID: 7560557271739554865}
   - component: {fileID: 9214428792549894706}
-  - component: {fileID: 2810284861164423732}
+  - component: {fileID: 2937881426829941708}
   - component: {fileID: 7859435693573268597}
   - component: {fileID: 7839183246876075174}
   m_Layer: 6
@@ -286,8 +286,6 @@ MonoBehaviour:
   thunderstrikeChainRange: 5
   lightningEffectPrefab: {fileID: 4867871391207819812, guid: 325138a74ce5e5c42b1c5cc074c41e8c, type: 3}
   chainedElectricDuration: 3
-  shockBleedDamagePerBleedStack: 8
-  cauterizeDamage: 22
   exposedDuration: 5
   exposedDamageMultiplier: 2
   toxicFumesDuration: 4
@@ -296,6 +294,7 @@ MonoBehaviour:
   enemyLayerMask:
     serializedVersion: 2
     m_Bits: 64
+  logReactions: 1
 --- !u!114 &1727308981666661483
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -333,8 +332,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff19e4b2975d90a49a8a43570193d225, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FireTagHandler
-  tickDamage: 2
+  damagePerStackPerTick: 1
   tickInterval: 1
+  logTicks: 0
 --- !u!114 &8173753788525360537
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -347,6 +347,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a79dec018312814a9f0afed5b0aee44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PoisonTagHandler
+  damagePerStackPerTick: 1
+  tickInterval: 1
+  logTicks: 0
 --- !u!114 &7560557271739554865
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -372,7 +375,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WindTagHandler
   knockbackMultiplier: 2.5
---- !u!114 &2810284861164423732
+--- !u!114 &2937881426829941708
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -381,9 +384,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 912767753459101041}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a79dec018312814a9f0afed5b0aee44, type: 3}
+  m_Script: {fileID: 11500000, guid: 978ef7f9a0adcba4c9ef2f0f4a143cb0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PoisonTagHandler
+  m_EditorClassIdentifier: Assembly-CSharp::BleedTagHandler
+  damagePerStackPerTick: 1
+  tickInterval: 1
+  logTicks: 0
 --- !u!195 &7859435693573268597
 NavMeshAgent:
   m_ObjectHideFlags: 0

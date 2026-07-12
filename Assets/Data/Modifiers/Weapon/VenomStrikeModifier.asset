@@ -9,16 +9,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25ba573e5d317ca4f9cfcc821ea925fd, type: 3}
-  m_Name: FrostEdgeModifier
-  m_EditorClassIdentifier: Assembly-CSharp::FrostEdgeModifierDefinition
-  modifierId: weapon.frost_edge
-  displayName: Frost Edge
-  description: Makes your sword apply FROST
+  m_Script: {fileID: 11500000, guid: 79238a7a73a623b4ab5c1053e77c70d5, type: 3}
+  m_Name: VenomStrikeModifier
+  m_EditorClassIdentifier: Assembly-CSharp::VenomStrikeModifierDefinition
+  modifierId: weapon.venom_strike
+  displayName: Venom Strike
+  description: Makes your sword apply POISON
   scope: 0
   rarityTier: 0
   icon: {fileID: 0}
   allowDuplicates: 0
-  frostDuration: 3
+  poisonDuration: 5
   applyOnThrowHit: 1
   logApplications: 1

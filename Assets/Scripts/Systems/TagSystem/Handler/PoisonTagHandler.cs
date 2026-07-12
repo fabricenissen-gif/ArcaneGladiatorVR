@@ -1,16 +1,13 @@
 using UnityEngine;
 
-public class PoisonTagHandler : MonoBehaviour
+/// <summary>
+/// Verursacht periodischen Giftschaden für jeden aktiven POISON-Stack
+/// auf diesem Ziel.
+/// </summary>
+[DisallowMultipleComponent]
+public sealed class PoisonTagHandler : TagDamageOverTimeHandler
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    protected override TagType DamageTag => TagType.POISON;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    protected override string DebugTagName => "POISON";
 }

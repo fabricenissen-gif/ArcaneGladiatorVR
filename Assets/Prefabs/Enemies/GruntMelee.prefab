@@ -275,13 +275,12 @@ GameObject:
   - component: {fileID: 3984404924980966674}
   - component: {fileID: 1303441068128184566}
   - component: {fileID: 3986049174779989830}
-  - component: {fileID: 2645632543645829296}
   - component: {fileID: 4576114612876594551}
   - component: {fileID: 2465552761438177106}
   - component: {fileID: 6578804489354831288}
   - component: {fileID: 2570002622458479604}
   - component: {fileID: 8671763314643661020}
-  - component: {fileID: 6421388083737807044}
+  - component: {fileID: 8006799619171479810}
   - component: {fileID: 768508152962860046}
   m_Layer: 6
   m_Name: GruntMelee
@@ -577,8 +576,6 @@ MonoBehaviour:
   thunderstrikeChainRange: 5
   lightningEffectPrefab: {fileID: 4867871391207819812, guid: 325138a74ce5e5c42b1c5cc074c41e8c, type: 3}
   chainedElectricDuration: 3
-  shockBleedDamagePerBleedStack: 8
-  cauterizeDamage: 22
   exposedDuration: 5
   exposedDamageMultiplier: 2
   toxicFumesDuration: 4
@@ -587,19 +584,7 @@ MonoBehaviour:
   enemyLayerMask:
     serializedVersion: 2
     m_Bits: 64
---- !u!114 &2645632543645829296
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5804382600099311766}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 72f0fc37316f50d488e2cede047cb13c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TagVfxIndicator
-  entries: []
+  logReactions: 1
 --- !u!114 &4576114612876594551
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -637,8 +622,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff19e4b2975d90a49a8a43570193d225, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FireTagHandler
-  tickDamage: 2
+  damagePerStackPerTick: 1
   tickInterval: 1
+  logTicks: 0
 --- !u!114 &6578804489354831288
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -651,6 +637,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a79dec018312814a9f0afed5b0aee44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PoisonTagHandler
+  damagePerStackPerTick: 1
+  tickInterval: 1
+  logTicks: 0
 --- !u!114 &2570002622458479604
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -676,7 +665,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WindTagHandler
   knockbackMultiplier: 2.5
---- !u!114 &6421388083737807044
+--- !u!114 &8006799619171479810
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -685,9 +674,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 5804382600099311766}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a79dec018312814a9f0afed5b0aee44, type: 3}
+  m_Script: {fileID: 11500000, guid: 978ef7f9a0adcba4c9ef2f0f4a143cb0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PoisonTagHandler
+  m_EditorClassIdentifier: Assembly-CSharp::BleedTagHandler
+  damagePerStackPerTick: 1
+  tickInterval: 1
+  logTicks: 0
 --- !u!195 &768508152962860046
 NavMeshAgent:
   m_ObjectHideFlags: 0
