@@ -206,6 +206,7 @@ public class TagReactionSystem : MonoBehaviour
             return false;
 
         TagInstance poisonTag = tagHandler.GetTag(TagType.POISON);
+
         int poisonStacks = poisonTag != null
             ? poisonTag.StackCount
             : 1;
@@ -355,18 +356,20 @@ public class TagReactionSystem : MonoBehaviour
 
         if (chase != null)
         {
-            StartCoroutine(DisableBehaviourTemporarily(
-                chase,
-                shatterStunDuration));
+            StartCoroutine(
+                DisableBehaviourTemporarily(
+                    chase,
+                    shatterStunDuration));
         }
 
         SwarmerAI swarmer = GetComponent<SwarmerAI>();
 
         if (swarmer != null)
         {
-            StartCoroutine(DisableBehaviourTemporarily(
-                swarmer,
-                shatterStunDuration));
+            StartCoroutine(
+                DisableBehaviourTemporarily(
+                    swarmer,
+                    shatterStunDuration));
         }
     }
 
@@ -388,6 +391,7 @@ public class TagReactionSystem : MonoBehaviour
             Vector3.zero);
 
         StopArcaneIgnite();
+
         igniteRoutine = StartCoroutine(ArcaneIgniteRoutine());
 
         if (burningVfxPrefab == null)
@@ -406,7 +410,7 @@ public class TagReactionSystem : MonoBehaviour
     private IEnumerator ArcaneIgniteRoutine()
     {
         float tickInterval = arcaneIgniteDuration /
-                             Mathf.Max(1, arcaneIgniteTicks);
+            Mathf.Max(1, arcaneIgniteTicks);
 
         for (int i = 0; i < arcaneIgniteTicks; i++)
         {
@@ -481,6 +485,7 @@ public class TagReactionSystem : MonoBehaviour
 
             closestDistance = distance;
             closestHealth = targetHealth;
+
             closestTagHandler =
                 targetHealth.GetComponent<TagHandler>();
         }
@@ -528,17 +533,29 @@ public class TagReactionSystem : MonoBehaviour
     private void ReactionToxicFumes()
     {
         if (toxicFumeCloudPrefab == null)
+        {
+            Debug.LogWarning(
+                $"[TagReactionSystem] TOXIC FUMES on '{gameObject.name}' " +
+                "could not spawn because no ToxicFumeCloud prefab is assigned.");
+
             return;
+        }
 
         ToxicFumeCloud cloud = Instantiate(
             toxicFumeCloudPrefab,
             transform.position,
             Quaternion.identity);
 
+        TagApplicationContext context =
+            TagApplicationContext.FromReaction(
+                this,
+                "ToxicFumesCloud");
+
         cloud.Initialize(
             toxicFumesDuration,
             toxicFumesRadius,
-            enemyLayerMask);
+            enemyLayerMask,
+            context);
     }
 
     private void UpdateExposedTimer()

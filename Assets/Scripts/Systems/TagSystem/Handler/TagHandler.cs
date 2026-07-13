@@ -67,6 +67,10 @@ public class TagHandler : MonoBehaviour
         ApplyTag(type, duration, TagApplicationContext.Unknown);
     }
 
+    /// <summary>
+    /// Wendet einen Tag an oder refresht ihn. Bei POISON und BLEED
+    /// fügt ein Refresh bis zum jeweiligen Limit einen Stack hinzu.
+    /// </summary>
     public void ApplyTag(
         TagType type,
         float duration,
@@ -75,8 +79,8 @@ public class TagHandler : MonoBehaviour
         if (type == TagType.NONE)
         {
             Debug.LogWarning(
-                $"[TagHandler] '{gameObject.name}' tried to apply TagType.NONE. " +
-                "The request was ignored.");
+                $"[TagHandler] '{gameObject.name}' tried to apply " +
+                "TagType.NONE. The request was ignored.");
 
             return;
         }
@@ -103,6 +107,46 @@ public class TagHandler : MonoBehaviour
             $"[TagHandler] {gameObject.name} -> TAG applied: {type} " +
             $"({safeDuration:F2}s) | stacks:{newTag.StackCount} | " +
             $"source:{FormatSource(newTag)}");
+    }
+
+    /// <summary>
+    /// Erneuert ausschließlich die Dauer eines bereits aktiven Tags.
+    ///
+    /// Im Unterschied zu ApplyTag wird niemals ein Stack hinzugefügt.
+    /// Für Zonen, Auren und Reaktionseffekte verwenden, die einen
+    /// vorhandenen Status erhalten dürfen, aber keine aktiven
+    /// Stack-Builder sein sollen.
+    /// </summary>
+    public bool RefreshTag(
+        TagType type,
+        float duration,
+        TagApplicationContext context)
+    {
+        if (type == TagType.NONE)
+        {
+            Debug.LogWarning(
+                $"[TagHandler] '{gameObject.name}' tried to refresh " +
+                "TagType.NONE. The request was ignored.");
+
+            return false;
+        }
+
+        if (!activeTags.TryGetValue(type, out TagInstance existing))
+            return false;
+
+        float safeDuration = Mathf.Max(0f, duration);
+
+        existing.Refresh(safeDuration, context);
+
+        OnTagRefreshed?.Invoke(type, existing);
+        RaiseTagChanged(type, existing, TagChangeType.Refreshed);
+
+        Debug.Log(
+            $"[TagHandler] {gameObject.name} -> {type} " +
+            $"duration refreshed ({safeDuration:F2}s) without stack | " +
+            $"source:{FormatSource(existing)}");
+
+        return true;
     }
 
     public bool HasTag(TagType type)
@@ -142,7 +186,8 @@ public class TagHandler : MonoBehaviour
         if (activeTags.Count == 0)
             return;
 
-        List<TagType> tagsToRemove = new List<TagType>(activeTags.Keys);
+        List<TagType> tagsToRemove =
+            new List<TagType>(activeTags.Keys);
 
         foreach (TagType type in tagsToRemove)
             RemoveTag(type);
@@ -192,7 +237,8 @@ public class TagHandler : MonoBehaviour
             : $"refreshed ({duration:F2}s)";
 
         Debug.Log(
-            $"[TagHandler] {gameObject.name} -> {type} {changeDescription} | " +
+            $"[TagHandler] {gameObject.name} -> {type} " +
+            $"{changeDescription} | " +
             $"source:{FormatSource(existing)}");
     }
 

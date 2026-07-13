@@ -67,8 +67,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58c3be28adfc6b040b04c6924d7807a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToxicFumeCloud
-  tickInterval: 0.75
+  refreshInterval: 1
   poisonDuration: 3
+  logApplications: 1
   cloudVfx: {fileID: 8117779548172724024}
 --- !u!1001 &1842959347836272973
 PrefabInstance:
