@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc3f808750ce35243a995af7b4a0532e, type: 3}
   m_Name: Reaction_Steamexplosion
   m_EditorClassIdentifier: Assembly-CSharp::ReactionDefinition
-  reactionId: reaction.new
-  displayName: New Reaction
-  effectId: 0
+  reactionId: reaction.steam_explosion
+  displayName: Steam Explosion
+  effectId: 1
   firstRequiredTag: 1
   secondRequiredTag: 2
-  priority: 0
+  priority: 100
   consumeRequiredTags: 1
   isAutomaticSystemReaction: 1

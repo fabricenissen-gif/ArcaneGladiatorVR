@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc3f808750ce35243a995af7b4a0532e, type: 3}
   m_Name: Reaction_VenomBurst
   m_EditorClassIdentifier: Assembly-CSharp::ReactionDefinition
-  reactionId: reaction.new
-  displayName: New Reaction
-  effectId: 0
-  firstRequiredTag: 1
-  secondRequiredTag: 2
-  priority: 0
+  reactionId: reaction.venom_burst
+  displayName: Venom Burst
+  effectId: 5
+  firstRequiredTag: 5
+  secondRequiredTag: 6
+  priority: 80
   consumeRequiredTags: 1
   isAutomaticSystemReaction: 1
