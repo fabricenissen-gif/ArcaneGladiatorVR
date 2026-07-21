@@ -205,6 +205,8 @@ GameObject:
   - component: {fileID: 7997616316614139842}
   - component: {fileID: 8186240038567095305}
   - component: {fileID: -6981234319262521526}
+  - component: {fileID: -6232089102564279645}
+  - component: {fileID: 7518454614229773939}
   m_Layer: 6
   m_Name: EnemyBase
   m_TagString: Untagged
@@ -566,6 +568,38 @@ MonoBehaviour:
   damagePerStackPerTick: 1
   tickInterval: 1
   logTicks: 0
+--- !u!114 &-6232089102564279645
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3325235985583854324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ce124b594c10024f989e40244184ceb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReactionResolver
+  definitions:
+  - {fileID: 11400000, guid: ed9d4d9cfdfc2ac4b9e645649513bab7, type: 2}
+  effectComponents: []
+  liveEffectIds: 01000000
+  logMatches: 1
+  logSkippedDefinitions: 1
+--- !u!114 &7518454614229773939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3325235985583854324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d97ae5c3362acab42a86f6c742455062, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VenomBurstReactionEffect
+  damagePerPoisonStack: 10
+  logExecution: 1
 --- !u!1 &3636118701606408629
 GameObject:
   m_ObjectHideFlags: 0

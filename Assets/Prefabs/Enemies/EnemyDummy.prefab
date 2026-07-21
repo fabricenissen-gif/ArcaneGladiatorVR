@@ -341,6 +341,11 @@ GameObject:
   - component: {fileID: 4802271418095003887}
   - component: {fileID: -5237814640695857871}
   - component: {fileID: 692803081287585808}
+  - component: {fileID: -2599596427316519956}
+  - component: {fileID: 1339068404016591721}
+  - component: {fileID: -8881215165562249137}
+  - component: {fileID: -9096993730023033702}
+  - component: {fileID: -6006604267344954343}
   m_Layer: 6
   m_Name: EnemyDummy
   m_TagString: Untagged
@@ -701,3 +706,94 @@ MonoBehaviour:
   damagePerStackPerTick: 1
   tickInterval: 1
   logTicks: 1
+--- !u!114 &-2599596427316519956
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9108634127881482417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ce124b594c10024f989e40244184ceb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReactionResolver
+  definitions:
+  - {fileID: 11400000, guid: ed9d4d9cfdfc2ac4b9e645649513bab7, type: 2}
+  - {fileID: 11400000, guid: 3c3c0edb89be1af4785609e13e90d185, type: 2}
+  - {fileID: 11400000, guid: 6b754c25112ddd34d9916327eccd61c3, type: 2}
+  - {fileID: 11400000, guid: 9b28dea9c59774844a2bd9dc40dc450b, type: 2}
+  effectComponents:
+  - {fileID: 1339068404016591721}
+  - {fileID: -8881215165562249137}
+  - {fileID: -9096993730023033702}
+  - {fileID: -6006604267344954343}
+  liveEffectIds: 01000000050000000200000004000000
+  logMatches: 1
+  logSkippedDefinitions: 1
+--- !u!114 &1339068404016591721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9108634127881482417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1f587d342c48434085a7ef7bffed7b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SteamExplosionReactionEffect
+  damage: 20
+  radius: 3
+  knockbackForce: 6
+  enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
+  logExecution: 1
+--- !u!114 &-8881215165562249137
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9108634127881482417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d97ae5c3362acab42a86f6c742455062, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VenomBurstReactionEffect
+  damagePerPoisonStack: 10
+  logExecution: 1
+--- !u!114 &-9096993730023033702
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9108634127881482417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f4ed8e0b2ef86443b6766f590d2483a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShatterReactionEffect
+  damage: 30
+  stunDuration: 1.5
+  logExecution: 1
+--- !u!114 &-6006604267344954343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9108634127881482417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7204b580b4d57e142aef2c401bdc1226, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArcaneIgniteReactionEffect
+  burstDamage: 12
+  tickCount: 4
+  totalDuration: 3
+  tickDamage: 4
+  burningVfxPrefab: {fileID: 1379199155223456419, guid: e8929e297e2875a4ebfd9b931f7a148a, type: 3}
+  logExecution: 1

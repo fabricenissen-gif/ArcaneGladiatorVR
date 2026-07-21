@@ -146,30 +146,16 @@ public class TagReactionSystem : MonoBehaviour
 
     private bool TryReactSteamExplosion(TagType triggerTag)
     {
-        if (!IsCombo(triggerTag, TagType.FIRE, TagType.FROST))
-            return false;
-
-        if (!ConsumeTags(TagType.FIRE, TagType.FROST))
-            return false;
-
-        LogReaction("STEAM EXPLOSION");
-        ReactionSteamExplosion();
-
-        return true;
+        // Steam Explosion wird jetzt vom ReactionResolver behandelt.
+        // Die übrigen Legacy-Reaktionen bleiben unverändert aktiv.
+        return false;
     }
 
     private bool TryReactShatter(TagType triggerTag)
     {
-        if (!IsCombo(triggerTag, TagType.ELECTRIC, TagType.FROST))
-            return false;
-
-        if (!ConsumeTags(TagType.ELECTRIC, TagType.FROST))
-            return false;
-
-        LogReaction("SHATTER");
-        ReactionShatter();
-
-        return true;
+        // Shatter wird jetzt vom ReactionResolver behandelt.
+        // Die übrigen Legacy-Reaktionen bleiben unverändert aktiv.
+        return false;
     }
 
     private bool TryReactBlizzard(TagType triggerTag)
@@ -188,36 +174,15 @@ public class TagReactionSystem : MonoBehaviour
 
     private bool TryReactArcaneIgnite(TagType triggerTag)
     {
-        if (!IsCombo(triggerTag, TagType.ARCANE, TagType.FIRE))
-            return false;
-
-        if (!ConsumeTags(TagType.ARCANE, TagType.FIRE))
-            return false;
-
-        LogReaction("ARCANE IGNITE");
-        ReactionArcaneIgnite();
-
-        return true;
+        // Arcane Ignite wird jetzt vom ReactionResolver behandelt.
+        // Die übrigen Legacy-Reaktionen bleiben unverändert aktiv.
+        return false;
     }
-
     private bool TryReactVenomBurst(TagType triggerTag)
     {
-        if (!IsCombo(triggerTag, TagType.ARCANE, TagType.POISON))
-            return false;
-
-        TagInstance poisonTag = tagHandler.GetTag(TagType.POISON);
-
-        int poisonStacks = poisonTag != null
-            ? poisonTag.StackCount
-            : 1;
-
-        if (!ConsumeTags(TagType.ARCANE, TagType.POISON))
-            return false;
-
-        LogReaction($"VENOM BURST | stacks:{poisonStacks}");
-        ReactionVenomBurst(poisonStacks);
-
-        return true;
+        // Venom Burst wird jetzt vom ReactionResolver behandelt.
+        // Die übrigen Legacy-Reaktionen bleiben unverändert aktiv.
+        return false;
     }
 
     private bool TryReactThunderstrike(TagType triggerTag)
